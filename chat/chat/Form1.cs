@@ -15,7 +15,7 @@ namespace chat
 {
     public partial class Form1 : Form
     {
-        Form2 f= null;
+        menuChat f= null;
         public Form1()
         {
             InitializeComponent();
@@ -25,6 +25,7 @@ namespace chat
         {
             
         }
+        
 
         private void button1_Click(object sender, EventArgs e)
         {
@@ -53,7 +54,7 @@ namespace chat
                                 band = true;
                                 if (f == null)
                                 {
-                                    f = new Form2();
+                                    f = new menuChat();
                                     f.Show();
                                 }
                                 f.Focus();
@@ -130,6 +131,56 @@ namespace chat
                 MessageBox.Show(ex.Message);
             }
             
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+           
+        }
+
+        private void richTextBox1_Enter(object sender, EventArgs e)
+        {
+            if (richTextBox1.Text == "textoejemplo@abc.com")
+            {
+                richTextBox1.Text = "";
+                richTextBox1.ForeColor = Color.Black;
+            }
+        }
+        private void richTextBox2_Enter(object sender, EventArgs e)
+        {
+            if (richTextBox2.Text == "contraseña")
+            {
+                richTextBox2.Text = "";
+                richTextBox2.ForeColor = Color.Black;
+            }
+        }
+        private void richTextBox1_Leave(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(richTextBox1.Text))
+            {
+                richTextBox1.Text = "textoejemplo@abc.com";
+                richTextBox1.ForeColor = Color.Gray;
+            }
+        }
+
+        private void richTextBox2_Leave(object sender, EventArgs e)
+        {
+            richTextBox2.Text = "contraseña";
+            richTextBox2.ForeColor = Color.Gray;
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            richTextBox1.Text = "textoejemplo@abc.com";
+            richTextBox1.ForeColor = Color.Gray;
+
+            richTextBox2.Text = "contraseña";
+            richTextBox2.ForeColor = Color.Gray;
+        }
+
+        private void richTextBox2_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

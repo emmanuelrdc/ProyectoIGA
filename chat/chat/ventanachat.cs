@@ -10,24 +10,11 @@ using System.Windows.Forms;
 
 namespace chat
 {
-    public partial class menuChat : Form
+    public partial class ventanachat : Form
     {
-        public menuChat()
+        public ventanachat()
         {
             InitializeComponent();
         }
-
-        private Form chatActual;
-
-        private void Form2_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void abrirChat(Form2 chat, Image image, String titulo)
-        {
-
-        }
-        
     }
 }
