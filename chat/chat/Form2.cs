@@ -10,11 +10,21 @@ using System.Windows.Forms;
 
 namespace chat
 {
-    public partial class Form2 : Form
+    public partial class menuChat : Form
     {
-        public Form2()
+        public menuChat()
         {
             InitializeComponent();
         }
+
+        private Form chatActual;
+
+        private void Form2_Load(object sender, EventArgs e)
+        {
+
+        }
+
+
+
     }
 }

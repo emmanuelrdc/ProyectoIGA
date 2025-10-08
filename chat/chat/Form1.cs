@@ -15,7 +15,7 @@ namespace chat
 {
     public partial class Form1 : Form
     {
-        Form2 f= null;
+        menuChat f = null;
         public Form1()
         {
             InitializeComponent();
@@ -23,8 +23,9 @@ namespace chat
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
-            
+
         }
+
 
         private void button1_Click(object sender, EventArgs e)
         {
@@ -34,11 +35,11 @@ namespace chat
 
             try
             {
-                conn = new MySqlConnection("server=127.0.0.1;uid=root;pwd=root1234;database=test");
+                conn = new MySqlConnection("server=127.0.0.1;uid=root;pwd=root;database=chat_app");
                 conn.Open();
                 bool band = false;
 
-                com = new MySqlCommand("SELECT nombre, cont FROM usuario ",conn);
+                com = new MySqlCommand("SELECT nombre, contraseña FROM usuarios ", conn);
 
                 reader = com.ExecuteReader();
 
@@ -48,17 +49,17 @@ namespace chat
                     {
                         if (richTextBox1.Text == reader["nombre"].ToString())
                         {
-                            if (richTextBox2.Text == reader["cont"].ToString())
+                            if (richTextBox2.Text == reader["contraseña"].ToString())
                             {
                                 band = true;
                                 if (f == null)
                                 {
-                                    f = new Form2();
+                                    f = new menuChat();
                                     f.Show();
                                 }
                                 f.Focus();
                                 //this.Close();
-                                
+
 
                             }
                         }
@@ -78,8 +79,8 @@ namespace chat
             {
                 MessageBox.Show(ex.Message);
             }
-            
-            
+
+
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -90,12 +91,12 @@ namespace chat
 
             try
             {
-                conn = new MySqlConnection("server=127.0.0.1;uid=root;pwd=root1234;database=test");
+                conn = new MySqlConnection("server=127.0.0.1;uid=root;pwd=root;database=chat_app");
                 conn.Open();
                 string nom = textBox1.Text;
-                bool band=false;
+                bool band = false;
                 int i = 1;
-                com = new MySqlCommand("SELECT nombre, cont FROM usuario ", conn);
+                com = new MySqlCommand("SELECT nombre, contraseña FROM usuarios ", conn);
 
                 reader = com.ExecuteReader();
 
@@ -105,7 +106,7 @@ namespace chat
                     {
                         if (richTextBox1.Text == reader["nombre"].ToString())
                         {
-                            if (richTextBox2.Text == reader["cont"].ToString())
+                            if (richTextBox2.Text == reader["contraseña"].ToString())
                             {
                                 band = true;
                                 MessageBox.Show("El usuario ya se encuentra registrado");
@@ -117,19 +118,69 @@ namespace chat
                 if (band == false || reader.HasRows == false)
                 {
                     reader.Close();
-                    com = new MySqlCommand("INSERT INTO usuario (idusuario, nombre, cont) VALUES (" + i + ", '" + richTextBox1.Text + "','" + richTextBox2.Text + "' ) ", conn);
+                    com = new MySqlCommand("INSERT INTO usuarios (id_usuario, nombre, contraseña) VALUES (" + i + ", '" + richTextBox1.Text + "','" + richTextBox2.Text + "' ) ", conn);
                     i++;
                     int res = com.ExecuteNonQuery();
                     MessageBox.Show("usuario creado");
                 }
-                
+
                 conn.Close();
             }
             catch (MySql.Data.MySqlClient.MySqlException ex)
             {
                 MessageBox.Show(ex.Message);
             }
-            
+
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void richTextBox1_Enter(object sender, EventArgs e)
+        {
+            if (richTextBox1.Text == "textoejemplo@abc.com")
+            {
+                richTextBox1.Text = "";
+                richTextBox1.ForeColor = Color.Black;
+            }
+        }
+        private void richTextBox2_Enter(object sender, EventArgs e)
+        {
+            if (richTextBox2.Text == "contraseña")
+            {
+                richTextBox2.Text = "";
+                richTextBox2.ForeColor = Color.Black;
+            }
+        }
+        private void richTextBox1_Leave(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(richTextBox1.Text))
+            {
+                richTextBox1.Text = "textoejemplo@abc.com";
+                richTextBox1.ForeColor = Color.Gray;
+            }
+        }
+
+        private void richTextBox2_Leave(object sender, EventArgs e)
+        {
+            richTextBox2.Text = "contraseña";
+            richTextBox2.ForeColor = Color.Gray;
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            richTextBox1.Text = "textoejemplo@abc.com";
+            richTextBox1.ForeColor = Color.Gray;
+
+            richTextBox2.Text = "contraseña";
+            richTextBox2.ForeColor = Color.Gray;
+        }
+
+        private void richTextBox2_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
