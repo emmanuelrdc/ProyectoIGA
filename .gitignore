@@ -1,0 +1,12 @@
+# Ignorar configuraciones de Visual Studio
+.vs/
+*.user
+*.suo
+
+# Carpetas de compilación
+bin/
+obj/
+
+# Otros posibles archivos temporales
+*.log
+*.tmp
