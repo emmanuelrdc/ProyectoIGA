@@ -13,12 +13,18 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 
 namespace chat
 {
+
     public partial class Form1 : Form
     {
         menuChat f = null;
         public Form1()
         {
             InitializeComponent();
+
+            DatabaseConnection.Initialize(server: "127.0.0.1",
+                database: "chat_app",
+                user: "root",
+                password: "root");
         }
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
@@ -29,108 +35,171 @@ namespace chat
 
         private void button1_Click(object sender, EventArgs e)
         {
-            MySqlCommand com;
-            MySqlConnection conn;
-            MySqlDataReader reader;
+            string usuario = richTextBox1.Text.Trim();
+            string password = richTextBox2.Text.Trim();
+
+            // Validar que no estén vacíos o con placeholder
+            if (string.IsNullOrEmpty(usuario) || usuario == "textoejemplo@abc.com")
+            {
+                MessageBox.Show("Por favor ingresa tu usuario", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                richTextBox1.Focus();
+                return;
+            }
+
+            if (string.IsNullOrEmpty(password) || password == "contraseña")
+            {
+                MessageBox.Show("Por favor ingresa tu contraseña", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                richTextBox2.Focus();
+                return;
+            }
 
             try
             {
-                conn = new MySqlConnection("server=127.0.0.1;uid=root;pwd=root;database=chat_app");
-                conn.Open();
-                bool band = false;
+                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
+                { 
+                    conn.Open();
+                    string query = "SELECT id_usuario, nombre FROM usuarios WHERE nombre = @usuario AND contraseña = @password";
+                    MySqlCommand cmd = new MySqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@usuario", usuario);
+                    cmd.Parameters.AddWithValue("@password", password);
 
-                com = new MySqlCommand("SELECT nombre, contraseña FROM usuarios ", conn);
+                    MySqlDataReader reader = cmd.ExecuteReader();
 
-                reader = com.ExecuteReader();
-
-                if (reader.HasRows == true)
-                {
-                    while (reader.Read())
+                    if (reader.Read())
                     {
-                        if (richTextBox1.Text == reader["nombre"].ToString())
-                        {
-                            if (richTextBox2.Text == reader["contraseña"].ToString())
-                            {
-                                band = true;
-                                if (f == null)
-                                {
-                                    f = new menuChat();
-                                    f.Show();
-                                }
-                                f.Focus();
-                                //this.Close();
+                        // Login exitoso
+                        int idUsuario = reader.GetInt32("id_usuario");
+                        string nombreUsuario = reader.GetString("nombre");
 
+                        reader.Close();
+                        conn.Close();
 
-                            }
-                        }
+                        MessageBox.Show($"¡Bienvenido {nombreUsuario}!", "Login exitoso",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                        // Abrir el menuChat
+                        menuChat formMenu = new menuChat(idUsuario, nombreUsuario);
+                        formMenu.FormClosed += (s, args) => this.Show(); // Mostrar login al cerrar menuChat
+                        formMenu.Show();
+                        this.Hide(); // Ocultar el login
                     }
-                    if (!band)
+                    else
                     {
-                        MessageBox.Show("No se encuentra el usario");
+                        MessageBox.Show("Usuario o contraseña incorrectos", "Error de autenticación",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                        // Limpiar campos
+                        richTextBox2.Clear();
+                        richTextBox1.Clear();
                     }
                 }
-                else
-                {
-                    MessageBox.Show("No se encuentra el usuario");
-                }
-                conn.Close();
             }
-            catch (MySql.Data.MySqlClient.MySqlException ex)
+            catch (MySqlException ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show($"Error de conexión a la base de datos:\n{ex.Message}",
+                    "Error de conexión", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error inesperado:\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
+
 
         private void button2_Click(object sender, EventArgs e)
         {
-            MySqlCommand com;
-            MySqlConnection conn;
-            MySqlDataReader reader;
+            string usuario = richTextBox1.Text.Trim();
+            string password = richTextBox2.Text.Trim();
 
+            // Validar que no estén vacíos o con placeholder
+            if (string.IsNullOrEmpty(usuario) || usuario == "Usuario")
+            {
+                MessageBox.Show("Por favor ingresa un nombre de usuario", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                richTextBox1.Focus();
+                return;
+            }
+
+            if (string.IsNullOrEmpty(password) || password == "Contraseña")
+            {
+                MessageBox.Show("Por favor ingresa una contraseña", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                richTextBox2.Focus();
+                return;
+            }
+
+            // Validar longitud mínima
+            if (usuario.Length < 3)
+            {
+                MessageBox.Show("El usuario debe tener al menos 3 caracteres", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (password.Length < 4)
+            {
+                MessageBox.Show("La contraseña debe tener al menos 4 caracteres", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Crear el usuario en la base de datos
             try
             {
-                conn = new MySqlConnection("server=127.0.0.1;uid=root;pwd=root;database=chat_app");
-                conn.Open();
-                string nom = textBox1.Text;
-                bool band = false;
-                int i = 1;
-                com = new MySqlCommand("SELECT nombre, contraseña FROM usuarios ", conn);
-
-                reader = com.ExecuteReader();
-
-                if (reader.HasRows == true)
+                // USAR DatabaseConnection.ConnectionString
+                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
                 {
-                    while (reader.Read())
+                    conn.Open();
+
+                    // Verificar si el usuario ya existe
+                    string queryVerificar = "SELECT COUNT(*) FROM usuarios WHERE nombre = @usuario";
+                    MySqlCommand cmdVerificar = new MySqlCommand(queryVerificar, conn);
+                    cmdVerificar.Parameters.AddWithValue("@usuario", usuario);
+
+                    int existe = Convert.ToInt32(cmdVerificar.ExecuteScalar());
+
+                    if (existe > 0)
                     {
-                        if (richTextBox1.Text == reader["nombre"].ToString())
-                        {
-                            if (richTextBox2.Text == reader["contraseña"].ToString())
-                            {
-                                band = true;
-                                MessageBox.Show("El usuario ya se encuentra registrado");
-                            }
-                        }
-                        i++;
+                        MessageBox.Show("Este nombre de usuario ya existe. Por favor elige otro.",
+                            "Usuario existente", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        richTextBox1.SelectAll();
+                        richTextBox1.Focus();
+                        return;
                     }
-                }
-                if (band == false || reader.HasRows == false)
-                {
-                    reader.Close();
-                    com = new MySqlCommand("INSERT INTO usuarios (id_usuario, nombre, contraseña) VALUES (" + i + ", '" + richTextBox1.Text + "','" + richTextBox2.Text + "' ) ", conn);
-                    i++;
-                    int res = com.ExecuteNonQuery();
-                    MessageBox.Show("usuario creado");
-                }
 
-                conn.Close();
+                    // Insertar el nuevo usuario
+                    string queryInsertar = "INSERT INTO usuarios (nombre, contraseña) VALUES (@usuario, @password)";
+                    MySqlCommand cmdInsertar = new MySqlCommand(queryInsertar, conn);
+                    cmdInsertar.Parameters.AddWithValue("@usuario", usuario);
+                    cmdInsertar.Parameters.AddWithValue("@password", password);
+
+                    cmdInsertar.ExecuteNonQuery();
+
+                    MessageBox.Show($"¡Cuenta creada exitosamente!\nUsuario: {usuario}\n\nYa puedes iniciar sesión.",
+                        "Cuenta creada", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // Limpiar los campos
+                    richTextBox1.Clear();
+                    richTextBox2.Clear();
+                    richTextBox1.Text = "Usuario";
+                    richTextBox1.ForeColor = System.Drawing.Color.Gray;
+                    richTextBox2.Text = "Contraseña";
+                    richTextBox2.ForeColor = System.Drawing.Color.Gray;
+                }
             }
-            catch (MySql.Data.MySqlClient.MySqlException ex)
+            catch (MySqlException ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show($"Error al crear la cuenta:\n{ex.Message}",
+                    "Error de base de datos", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error inesperado:\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -165,8 +234,11 @@ namespace chat
 
         private void richTextBox2_Leave(object sender, EventArgs e)
         {
-            richTextBox2.Text = "contraseña";
-            richTextBox2.ForeColor = Color.Gray;
+            if (string.IsNullOrWhiteSpace(richTextBox2.Text))
+            {
+                richTextBox2.Text = "contraseña";
+                richTextBox2.ForeColor = Color.Gray;
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)

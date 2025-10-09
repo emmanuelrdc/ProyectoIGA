@@ -86,3 +86,4 @@ C:\SEMESTRE5\IGA\chat\chat\chat\obj\Debug\chat.csproj.CoreCompileInputs.cache
 C:\SEMESTRE5\IGA\chat\chat\chat\obj\Debug\chat.csproj.Up2Date
 C:\SEMESTRE5\IGA\chat\chat\chat\obj\Debug\chat.exe
 C:\SEMESTRE5\IGA\chat\chat\chat\obj\Debug\chat.pdb
+C:\SEMESTRE5\IGA\chat\chat\chat\obj\Debug\chat.menuChat.resources
