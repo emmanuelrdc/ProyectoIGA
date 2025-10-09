@@ -15,14 +15,15 @@ namespace chat
     {
         private int idUsuarioActual;
         private string nombreUsuarioActual;
+        
         public menuChat(int idUsuario, string nombreUsuario)
         {
             InitializeComponent();
             idUsuarioActual = idUsuario;
             nombreUsuarioActual = nombreUsuario;
             label2.Text = $"Hola, {nombreUsuarioActual}";
-
-
+            richTextBox1.Visible = false;
+            panel7.Visible = true;
         }
 
         private Form chatActual;
@@ -107,12 +108,42 @@ namespace chat
         private void ChatItem_ChatClicked(object sender, EventArgs e)
         {
             ChatItem chatItem = (ChatItem)sender;
-
             // Aquí cargarás los mensajes del chat seleccionado
             MessageBox.Show($"Chat seleccionado: {chatItem.NombreChat}\nID: {chatItem.IdChat}",
                 "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             // TODO: Implementar la carga de mensajes en panel3
+           
+            using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
+            {
+                try
+                {
+                    conn.Open();
+                    string query = "SELECT m.fecha, m.mensaje, u.nombre AS nombre_usuario FROM mensajes m JOIN usuarios u ON m.id_usuario = u.id_usuario WHERE m.id_chat = @is_chat ORDER BY m.fecha ASC";
+                    using (MySqlCommand comm = new MySqlCommand(query, conn))
+                    {
+                        comm.Parameters.AddWithValue("@id_chat", chatItem.IdChat);
+                        using (MySqlDataReader reader = comm.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string nom = reader["nombre_usuario"].ToString();
+                                string msj = reader["mensaje"].ToString();
+                                DateTime fecha = reader.GetDateTime("fecha");
+                                string msjcom = $"[{fecha}] {nom}: {msj}";
+                                richTextBox2.AppendText(msjcom);
+                            }
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine("Error al leer los mensajes: " + ex.Message);
+                }
+            }
+            panel7.Visible = false;
+            richTextBox1.Visible = true;
+            richTextBox2.ReadOnly = true;
         }
 
         private void panel6_Paint(object sender, PaintEventArgs e)
@@ -272,6 +303,11 @@ namespace chat
             }
 
             return null;
+        }
+
+        private void panel3_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }

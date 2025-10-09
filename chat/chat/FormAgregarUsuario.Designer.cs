@@ -82,7 +82,7 @@ namespace chat
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold);
             this.label1.Location = new System.Drawing.Point(12, 9);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(128, 17);
+            this.label1.Size = new System.Drawing.Size(124, 17);
             this.label1.TabIndex = 4;
             this.label1.Text = "Buscar Usuario:";
             // 
@@ -90,6 +90,7 @@ namespace chat
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.ClientSize = new System.Drawing.Size(384, 361);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.btnCancelar);
@@ -104,6 +105,7 @@ namespace chat
             this.Text = "Agregar Usuario";
             this.ResumeLayout(false);
             this.PerformLayout();
+
         }
 
         private System.Windows.Forms.TextBox txtBuscar;
