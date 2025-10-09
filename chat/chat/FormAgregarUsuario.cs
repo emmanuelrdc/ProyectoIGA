@@ -20,6 +20,11 @@ namespace chat
         {
             InitializeComponent();
             idUsuarioActual = idUsuario;
+            this.Load += FormAgregarUsuario_Load;
+        }
+        private void FormAgregarUsuario_Load(object sender, EventArgs e)
+        {
+            CargarUsuarios();
         }
         private void CargarUsuarios()
         {
@@ -71,7 +76,7 @@ namespace chat
             }
 
             listBoxUsuarios.Items.Clear();
-            foreach (DataRow row in dtUsuarios.Rows)
+            foreach (DataRow row in  dtUsuarios.Rows)
             {
                 string nombre = row["nombre"].ToString().ToLower();
                 if (nombre.Contains(filtro))
