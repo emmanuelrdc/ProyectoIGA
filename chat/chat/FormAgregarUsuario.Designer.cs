@@ -39,27 +39,32 @@ namespace chat
             // 
             // txtBuscar
             // 
-            this.txtBuscar.Location = new System.Drawing.Point(12, 35);
+            this.txtBuscar.Location = new System.Drawing.Point(18, 54);
+            this.txtBuscar.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtBuscar.Name = "txtBuscar";
-            this.txtBuscar.Size = new System.Drawing.Size(360, 20);
+            this.txtBuscar.Size = new System.Drawing.Size(538, 26);
             this.txtBuscar.TabIndex = 0;
             this.txtBuscar.TextChanged += new System.EventHandler(this.txtBuscar_TextChanged);
             // 
             // listBoxUsuarios
             // 
             this.listBoxUsuarios.FormattingEnabled = true;
-            this.listBoxUsuarios.Location = new System.Drawing.Point(12, 70);
+            this.listBoxUsuarios.ItemHeight = 20;
+            this.listBoxUsuarios.Location = new System.Drawing.Point(18, 108);
+            this.listBoxUsuarios.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.listBoxUsuarios.Name = "listBoxUsuarios";
-            this.listBoxUsuarios.Size = new System.Drawing.Size(360, 238);
+            this.listBoxUsuarios.Size = new System.Drawing.Size(538, 364);
             this.listBoxUsuarios.TabIndex = 1;
+            this.listBoxUsuarios.SelectedIndexChanged += new System.EventHandler(this.listBoxUsuarios_SelectedIndexChanged);
             this.listBoxUsuarios.DoubleClick += new System.EventHandler(this.btnSeleccionar_Click);
             // 
             // btnSeleccionar
             // 
             this.btnSeleccionar.BackColor = System.Drawing.Color.LightGreen;
-            this.btnSeleccionar.Location = new System.Drawing.Point(12, 320);
+            this.btnSeleccionar.Location = new System.Drawing.Point(18, 492);
+            this.btnSeleccionar.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnSeleccionar.Name = "btnSeleccionar";
-            this.btnSeleccionar.Size = new System.Drawing.Size(170, 30);
+            this.btnSeleccionar.Size = new System.Drawing.Size(255, 46);
             this.btnSeleccionar.TabIndex = 2;
             this.btnSeleccionar.Text = "Seleccionar";
             this.btnSeleccionar.UseVisualStyleBackColor = false;
@@ -68,9 +73,10 @@ namespace chat
             // btnCancelar
             // 
             this.btnCancelar.BackColor = System.Drawing.Color.LightCoral;
-            this.btnCancelar.Location = new System.Drawing.Point(202, 320);
+            this.btnCancelar.Location = new System.Drawing.Point(303, 492);
+            this.btnCancelar.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnCancelar.Name = "btnCancelar";
-            this.btnCancelar.Size = new System.Drawing.Size(170, 30);
+            this.btnCancelar.Size = new System.Drawing.Size(255, 46);
             this.btnCancelar.TabIndex = 3;
             this.btnCancelar.Text = "Cancelar";
             this.btnCancelar.UseVisualStyleBackColor = false;
@@ -80,24 +86,26 @@ namespace chat
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold);
-            this.label1.Location = new System.Drawing.Point(12, 9);
+            this.label1.Location = new System.Drawing.Point(18, 14);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(124, 17);
+            this.label1.Size = new System.Drawing.Size(166, 25);
             this.label1.TabIndex = 4;
             this.label1.Text = "Buscar Usuario:";
             // 
             // FormAgregarUsuario
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.ClientSize = new System.Drawing.Size(384, 361);
+            this.ClientSize = new System.Drawing.Size(576, 555);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.btnCancelar);
             this.Controls.Add(this.btnSeleccionar);
             this.Controls.Add(this.listBoxUsuarios);
             this.Controls.Add(this.txtBuscar);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "FormAgregarUsuario";

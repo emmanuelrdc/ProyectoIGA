@@ -124,5 +124,10 @@ namespace chat
                 return Nombre;
             }
         }
+
+        private void listBoxUsuarios_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }

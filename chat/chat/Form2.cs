@@ -1,5 +1,4 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MySql.Data.MySqlClient;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace chat
 {
@@ -309,5 +310,100 @@ namespace chat
         {
 
         }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+            label3.Text = nombreUsuarioActual.ToString();
+        }
+
+        private void richTextBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+        
+        private int idChatActual = -1;
+
+        private void CargarMensajes(int idChat)
+        {
+            try
+            {
+                richTextBox2.Clear();
+
+                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
+                {
+                    conn.Open();
+
+                    string query = @"SELECT m.mensaje, m.fecha, u.nombre
+                             FROM mensajes m
+                             INNER JOIN usuarios u ON m.id_usuario = u.id_usuario
+                             WHERE m.id_chat = @idChat
+                             ORDER BY m.fecha ASC";
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@idChat", idChat);
+
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string nombre = reader.GetString("nombre");
+                                string mensaje = reader.GetString("mensaje");
+                                DateTime fecha = reader.GetDateTime("fecha");
+
+                                // Mostrar el mensaje en el RichTextBox
+                                richTextBox2.AppendText($"[{fecha:HH:mm}] {nombre}: {mensaje}\n");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar mensajes: " + ex.Message);
+            }
+        }
+
+        private void PictureBox2_Click(object sender, EventArgs e)
+        {
+            string mensaje = richTextBox1.Text.Trim();
+            if (string.IsNullOrEmpty(mensaje))
+            {
+                MessageBox.Show("No puedes enviar un mensaje vacío.");
+                return;
+            }
+
+            if (idChatActual == -1)
+            {
+                MessageBox.Show("Selecciona un chat primero.");
+                return;
+            }
+
+            try
+            {
+                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
+                {
+                    conn.Open();
+                    string query = @"INSERT INTO mensajes (id_chat, id_usuario, mensaje, fecha)
+                             VALUES (@idChat, @idUsuario, @mensaje, NOW())";
+                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@idChat", idChatActual);
+                        cmd.Parameters.AddWithValue("@idUsuario", idUsuarioActual);
+                        cmd.Parameters.AddWithValue("@mensaje", mensaje);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                richTextBox2.AppendText($"[{DateTime.Now:HH:mm}] {nombreUsuarioActual}: {mensaje}\n");
+                richTextBox1.Clear();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al enviar mensaje: " + ex.Message);
+            }
+        }
+        
+
     }
 }
