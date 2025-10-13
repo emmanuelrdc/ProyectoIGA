@@ -116,7 +116,7 @@ namespace chat
                 "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
             idChatActual = chatItem.IdChat;
             // TODO: Implementar la carga de mensajes en panel3
-
+            CargarMensajes(idChatActual);
             using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
             {
                 try
@@ -337,7 +337,7 @@ namespace chat
 
                     string query = @"SELECT m.mensaje, m.fecha, u.nombre
                              FROM mensajes m
-                             INNER JOIN usuarios u ON m.id_usuario = u.id_usuario
+                             JOIN usuarios u ON m.id_usuario = u.id_usuario
                              WHERE m.id_chat = @idChat
                              ORDER BY m.fecha ASC";
 
@@ -368,6 +368,7 @@ namespace chat
 
         private void PictureBox2_Click(object sender, EventArgs e)
         {
+            
             string mensaje = richTextBox1.Text.Trim();
             if (string.IsNullOrEmpty(mensaje))
             {
@@ -397,7 +398,9 @@ namespace chat
                     }
                 }
 
-                richTextBox2.AppendText($"[{DateTime.Now:HH:mm}] {nombreUsuarioActual}: {mensaje}\n");
+                //richTextBox2.AppendText($"[{DateTime.Now:HH:mm}] {nombreUsuarioActual}: {mensaje}\n");
+                //richTextBox1.Clear();
+                CargarMensajes(idChatActual);
                 richTextBox1.Clear();
             }
             catch (Exception ex)
