@@ -34,6 +34,8 @@ namespace chat
             panel2.Visible = false;
             CargarChats();
         }
+        private int idChatActual = -1;
+
         private void CargarChats()
         {
             
@@ -112,9 +114,9 @@ namespace chat
             // Aquí cargarás los mensajes del chat seleccionado
             MessageBox.Show($"Chat seleccionado: {chatItem.NombreChat}\nID: {chatItem.IdChat}",
                 "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
+            idChatActual = chatItem.IdChat;
             // TODO: Implementar la carga de mensajes en panel3
-           
+
             using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
             {
                 try
@@ -321,7 +323,7 @@ namespace chat
 
         }
         
-        private int idChatActual = -1;
+        
 
         private void CargarMensajes(int idChat)
         {
