@@ -66,6 +66,7 @@ namespace chat
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void checkedListBoxUsuarios_ItemCheck(object sender, ItemCheckEventArgs e)
         {
             // Actualizar contador (se ejecuta después del cambio)
@@ -75,6 +76,7 @@ namespace chat
                 labelContador.Text = $"{contador} miembro{(contador != 1 ? "s" : "")} seleccionado{(contador != 1 ? "s" : "")}";
             }));
         }
+
         private void btnCrear_Click(object sender, EventArgs e)
         {
             string nombreGrupo = txtNombreGrupo.Text.Trim();
@@ -107,11 +109,13 @@ namespace chat
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
+
         private void btnCancelar_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
+
         private class UsuarioItem
         {
             public int Id { get; set; }
@@ -122,7 +126,5 @@ namespace chat
                 return Nombre;
             }
         }
-
     }
-
 }
