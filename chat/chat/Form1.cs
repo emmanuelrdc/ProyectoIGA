@@ -1,4 +1,5 @@
-﻿using MySql.Data.MySqlClient;
+﻿using Microsoft.AspNetCore.SignalR.Client;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -17,23 +18,38 @@ namespace chat
     public partial class Form1 : Form
     {
         menuChat f = null;
+        private HubConnection connection;
         public Form1()
         {
             InitializeComponent();
-
+            /*
             DatabaseConnection.Initialize(server: "127.0.0.1",
                 database: "chat_app",
                 user: "root",
                 password: "root");
-        }
+            */
+            InitializeSignalR();
+         }
 
-        private void richTextBox1_TextChanged(object sender, EventArgs e)
+        private async Task InitializeSignalR()
         {
+            string serverUrl = "http://127.0.0.1:5000/chathub";
 
+            connection = new HubConnectionBuilder().WithUrl(serverUrl).Build();
+            try
+            {
+                await connection.StartAsync();
+                MessageBox.Show("conectado al servidor");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                button1.Enabled = false;
+                button2.Enabled = false;
+            
         }
 
-
-        private void button1_Click(object sender, EventArgs e)
+        private async Task button1_Click(object sender, EventArgs e)
         {
             string usuario = richTextBox1.Text.Trim();
             string password = richTextBox2.Text.Trim();
@@ -50,11 +66,29 @@ namespace chat
             if (string.IsNullOrEmpty(password) || password == "contraseña")
             {
                 MessageBox.Show("Por favor ingresa tu contraseña", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 richTextBox2.Focus();
                 return;
             }
+            if(connection==null || connection.State !=HubConnectionState.Connected)
+            {
+                MessageBox.Show("no esta conectado al servidor de chat");
+                return;
+            }
+            try
+            {
+                var result = await connection.InvokeAsync<LoginResult>("LoginUser", usuario, password);
+                if(result.Success)
+                {
+                    MessageBox.Show($"Bienvenido {result.UserName}",MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    menuChat formMenu = new menuChat(result.UserId, result.UserName, connection);
+                    formMenu.FormClosed += (s, args) => this.Show();
+                    formMenu.Show();
+                    this.Hide();
+                }
+            }
 
+            /*
             try
             {
                 using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
@@ -105,7 +139,7 @@ namespace chat
             {
                 MessageBox.Show($"Error inesperado:\n{ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            }*/
         }
 
 
