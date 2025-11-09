@@ -8,7 +8,7 @@ namespace Servidor
 {
     internal class Program
     {
-        private const string MySqlConnectionString = "Server=localhost; Port=3306; Database=test; Uid=root; Pwd=root1234;";
+        private const string MySqlConnectionString = "Server=localhost; Port=3306; Database=new_schema; Uid=root; Pwd=root1234;";
 
         // Clase que maneja la lógica principal del servidor TCP
         class TcpServer
@@ -88,7 +88,7 @@ namespace Servidor
                         // O si es un dato, lo insertas.
 
                         // Ejemplo: Consulta la base de datos con un valor recibido
-                        string sql = $"SELECT nombre FROM catalogo WHERE id = '{receivedData}'";
+                        string sql = $"SELECT nombre FROM usuarios WHERE nombre = '{receivedData}'";
 
                         using (MySqlCommand command = new MySqlCommand(sql, connection))
                         {
