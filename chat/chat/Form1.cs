@@ -24,7 +24,9 @@ namespace chat
             DatabaseConnection.Initialize(server: "127.0.0.1",
                 database: "chat_app",
                 user: "root",
-                password: "root");
+                //password: "root");
+                password: "mascota1");
+
         }
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
