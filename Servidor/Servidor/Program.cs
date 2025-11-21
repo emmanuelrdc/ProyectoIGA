@@ -2,19 +2,15 @@
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using MySql.Data.MySqlClient; // El proveedor de MySQL
-// ... otros usings ...
+using MySql.Data.MySqlClient;
+using MySqlX.XDevAPI;
 
 namespace Servidor
 {
     internal class Program
     {
-        private const string MySqlConnectionString = "Server=localhost; Port=3306; Database=new_schema; Uid=root; Pwd=root1234;";
-
-        // Clase que maneja la lógica principal del servidor TCP
         class TcpServer
         {
-            //static void Main()
             public static async Task Main()
             {
                 TcpListener server = null;
@@ -29,8 +25,6 @@ namespace Servidor
                     while (true)
                     {
                         TcpClient client;
-                        // 1. Aceptar Conexión del Cliente TCP
-                        //TcpClient client = server.AcceptTcpClient();
                         client = await server.AcceptTcpClientAsync();
                         _ = Task.Run(() => HandleClientAsync(client));
 
@@ -50,37 +44,7 @@ namespace Servidor
                 }
             }
 
-            // Método para manejar la lógica de un cliente específico
-            /*
-            private static void HandleClient(TcpClient client)
-            {
-                using (client) // El 'using' asegura que el cliente se cierre
-                {
-                    NetworkStream stream = client.GetStream();
 
-                    try
-                    {
-                        // 1. Leer Mensaje del Cliente
-                        byte[] buffer = new byte[256];
-                        int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                        string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
-
-                        Console.WriteLine($"Recibido: {message}");
-
-                        // 2. Lógica Clave: Usar la BD para responder o almacenar
-                        string dbResponse = QueryDatabase(message);
-
-                        // 3. Responder al Cliente
-                        byte[] responseBytes = Encoding.UTF8.GetBytes(dbResponse);
-                        stream.Write(responseBytes, 0, responseBytes.Length);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error manejando cliente/BD: {ex.Message}");
-                    }
-                }
-            }*/
-           
             private static async Task HandleClientAsync(TcpClient client)
             {
                 using (client)
@@ -94,7 +58,7 @@ namespace Servidor
                         string message = Encoding.UTF8.GetString(buffer, 0, bytesleidos).Trim();
                         Console.WriteLine($"Recibido: {message}");
 
-                        string respuesta = await Database.QueryAsync(message);
+                        string respuesta = await ProcessCommandAsync(message);
 
                         byte[] responseBytes = Encoding.UTF8.GetBytes(respuesta);
                         await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
@@ -107,68 +71,124 @@ namespace Servidor
 
             }
 
-            static class Database
+            private static async Task<string> ProcessCommandAsync(string message)
             {
-                private const string ConnString = "Server=localhost; Port=3306; Database=new_schema; Uid=root; Pwd=root1234;";
-
-                public static async Task<string> QueryAsync(string name)
+                try
                 {
-                    var conn = new MySqlConnection(ConnString);
+                    string[] partes = message.Split('|');
+                    if (partes.Length == 0)
+                    {
+                        return "Error, mensaje vacio";
+                    }
+                    string comando = partes[0].ToUpper();
 
-                    await conn.OpenAsync();
+                    switch (comando)
+                    {
+                        case "Login":
+                            if (partes.Length < 3)
+                                return "Error, formato invalido";
+                            return await Database.LoginAsync(partes[1], partes[2]);
 
-                    string sql = "SELECT nombre FROM usuarios WHERE nombre = @nombre";
+                        case "Register":
+                            if (partes.Length < 3)
+                                return "Error, formato invalido";
+                            return await Database.RegisterAsync(partes[1], partes[2]);
 
-                    var cmd = new MySqlCommand(sql, conn);
-                    cmd.Parameters.AddWithValue("@nombre", name);
-
-                    var result = await cmd.ExecuteScalarAsync();
-
-                    return result != null
-                        ? $"Dato encontrado: {result}"
-                        : $"No se encontró el dato '{name}'";
+                        default:
+                            return $"Error, comando desconocido";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return $"Error {ex.Message}";
                 }
             }
-            /*
-            // Nuevo método para interactuar con la base de datos
-            private static string QueryDatabase(string receivedData)
+
+            static class Database
             {
-                // Solo se abre la conexión para la operación que se necesite
-                using (MySqlConnection connection = new MySqlConnection(MySqlConnectionString))
+                // CAMBIA ESTOS DATOS por los de tu BD
+                private const string ConnString = "Server=localhost; Port=3306; Database=chat_app; Uid=root; Pwd=root;";
+
+                // NUEVO: Login de usuario
+                public static async Task<string> LoginAsync(string usuario, string password)
                 {
                     try
                     {
-                        connection.Open();
-                        // 💡 Aquí defines lo que hará la BD:
-                        // Por ejemplo: si el mensaje contiene una consulta SQL, la ejecutas.
-                        // O si es un dato, lo insertas.
-
-                        // Ejemplo: Consulta la base de datos con un valor recibido
-                        string sql = $"SELECT nombre FROM usuarios WHERE nombre = '{receivedData}'";
-
-                        using (MySqlCommand command = new MySqlCommand(sql, connection))
+                        using (var conn = new MySqlConnection(ConnString))
                         {
-                            object result = command.ExecuteScalar(); // Devuelve el primer valor
+                            await conn.OpenAsync();
 
-                            if (result != null)
+                            string sql = "SELECT id_usuario, nombre FROM usuarios WHERE nombre = @usuario AND contraseña = @password";
+
+                            using (var cmd = new MySqlCommand(sql, conn))
                             {
-                                return $"Dato encontrado: {result.ToString()}";
-                            }
-                            else
-                            {
-                                return $"Mensaje recibido '{receivedData}', pero no se encontraron datos.";
+                                cmd.Parameters.AddWithValue("@usuario", usuario);
+                                cmd.Parameters.AddWithValue("@password", password);
+
+                                using (var reader = await cmd.ExecuteReaderAsync())
+                                {
+                                    if (await reader.ReadAsync())
+                                    {
+                                        int idUsuario = reader.GetInt32("id_usuario");
+                                        string nombreUsuario = reader.GetString("nombre");
+
+                                        return $"SUCCESS|{idUsuario}|{nombreUsuario}";
+                                    }
+                                    else
+                                    {
+                                        return "ERROR|Usuario o contraseña incorrectos";
+                                    }
+                                }
                             }
                         }
                     }
                     catch (MySqlException ex)
                     {
-                        // Si falla la BD, el servidor debe manejarlo y responder al cliente
-                        return $"Error de BD: {ex.Message}";
+                        return $"Error, Error de BD: {ex.Message}";
+                    }
+                }
+
+                public static async Task<string> RegisterAsync(string usuario, string password)
+                {
+                    try
+                    {
+                        using (var conn = new MySqlConnection(ConnString))
+                        {
+                            await conn.OpenAsync();
+
+                            // Verificar si existe
+                            string queryVerificar = "SELECT COUNT(*) FROM usuarios WHERE nombre = @usuario";
+                            using (var cmdVerificar = new MySqlCommand(queryVerificar, conn))
+                            {
+                                cmdVerificar.Parameters.AddWithValue("@usuario", usuario);
+
+                                int existe = Convert.ToInt32(await cmdVerificar.ExecuteScalarAsync());
+
+                                if (existe > 0)
+                                {
+                                    return "Error, Este usuario ya existe";
+                                }
+                            }
+
+                            // Insertar usuario
+                            string queryInsertar = "INSERT INTO usuarios (nombre, contraseña) VALUES (@usuario, @password)";
+                            using (var cmdInsertar = new MySqlCommand(queryInsertar, conn))
+                            {
+                                cmdInsertar.Parameters.AddWithValue("@usuario", usuario);
+                                cmdInsertar.Parameters.AddWithValue("@password", password);
+
+                                await cmdInsertar.ExecuteNonQueryAsync();
+
+                                return "Success, Usuario registrado exitosamente";
+                            }
+                        }
+                    }
+                    catch (MySqlException ex)
+                    {
+                        return $"Error, Error de BD: {ex.Message}";
                     }
                 }
             }
-            */
-
         }
     }
 }

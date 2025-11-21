@@ -68,7 +68,6 @@
             this.textBox1.TabIndex = 4;
             this.textBox1.Text = "Bienvenido";
             this.textBox1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
             // 
             // richTextBox2
             // 
@@ -79,7 +78,6 @@
             this.richTextBox2.Size = new System.Drawing.Size(246, 33);
             this.richTextBox2.TabIndex = 3;
             this.richTextBox2.Text = "";
-            this.richTextBox2.TextChanged += new System.EventHandler(this.richTextBox2_TextChanged);
             this.richTextBox2.Enter += new System.EventHandler(this.richTextBox2_Enter);
             this.richTextBox2.Leave += new System.EventHandler(this.richTextBox2_Leave);
             // 
@@ -92,7 +90,6 @@
             this.richTextBox1.Size = new System.Drawing.Size(295, 29);
             this.richTextBox1.TabIndex = 2;
             this.richTextBox1.Text = "";
-            this.richTextBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
             this.richTextBox1.Enter += new System.EventHandler(this.richTextBox1_Enter);
             this.richTextBox1.Leave += new System.EventHandler(this.richTextBox1_Leave);
             // 
