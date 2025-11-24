@@ -17,7 +17,7 @@ namespace chat
         private System.Windows.Forms.Timer timerActualizar;
         private int ultimoNumeroMensajes = 0;
 
-
+        /*
         private void InsertarTextoConEmojis(RichTextBox destino, string texto)
         {
             int pos = 0;
@@ -45,12 +45,13 @@ namespace chat
                 }
             }
         }
+       
         private Dictionary<string, Image> emojis = new Dictionary<string, Image>()
         {
             { ":)", Properties.Resources.sonrisa},
             { ":(", Properties.Resources.llorando},
             { "<3", Properties.Resources.corazon}
-        };
+        };*/
 
 
         public menuChat(int idUsuario, string nombreUsuario)
@@ -80,6 +81,7 @@ namespace chat
             panel2.Visible = false;
             CargarChats();
         }
+        /*
         private void ReemplazarEmojis()
         {
             int cursorPos = richTextBox1.SelectionStart;
@@ -108,6 +110,7 @@ namespace chat
             // Restaurar posición del cursor
             richTextBox1.Select(Math.Min(cursorPos, richTextBox1.TextLength), 0);
         }
+        */
         private void Label4_Click(object sender, EventArgs e)
         {
             if (idChatActual == -1)
@@ -458,14 +461,15 @@ namespace chat
             }
         }
 
+        /*
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
             // Ya no reemplaza emojis aquí para evitar lag
             // Los emojis se reemplazan en KeyPress
         }
-
+        */
         
-
+        /*
         private void InsertarImagenEnRichTextBox(Image imagen)
         {
             if (imagen == null) return;
@@ -491,7 +495,7 @@ namespace chat
                 Clipboard.SetDataObject(oldClipboardData);
             }
         }
-
+        */
         
 
         private void button1_Click(object sender, EventArgs e)
