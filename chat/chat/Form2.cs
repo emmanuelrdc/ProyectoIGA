@@ -1,10 +1,14 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using Mysqlx.Cursor;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using MySql.Data.MySqlClient;
 
 namespace chat
 {
@@ -57,8 +61,8 @@ namespace chat
         public menuChat(int idUsuario, string nombreUsuario)
         {
             InitializeComponent();
-            idUsuarioActual = idUsuario;
-            nombreUsuarioActual = nombreUsuario;
+            this.idUsuarioActual = idUsuario;
+            this.nombreUsuarioActual = nombreUsuario;
             label2.Text = $"Hola, {nombreUsuarioActual}";
 
             // Configurar visibilidad inicial
@@ -80,6 +84,203 @@ namespace chat
         {
             panel2.Visible = false;
             CargarChats();
+        }
+
+        private async Task<string> EnviarPeticion(string mensaje)
+        {
+            try
+            {
+                using (TcpClient client = new TcpClient())
+                {
+                    await client.ConnectAsync("127.0.0.1", 13000);
+
+                    using (NetworkStream stream = client.GetStream())
+                    {
+                        byte[] data = Encoding.UTF8.GetBytes(mensaje);
+                        await stream.WriteAsync(data, 0, data.Length);
+
+                        byte[] buffer = new byte[4096];
+                        int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                        return Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error|No se pudo conectar al servidor";
+            }
+        }
+
+        private async void CargarChats()
+        {
+            try
+            {
+                string mensaje = "GETCHATS" + idUsuarioActual;
+                string respuesta = await EnviarPeticion(mensaje);
+                string[] partes = respuesta.Split('|');
+
+                if (partes[0] != "Success" || partes.Length < 2)
+                {
+                    MessageBox.Show("Error al cargar chats");
+                    return;
+                }
+
+                string[] chats = partes[1].Split(';');
+                int ypos = 0;
+
+                foreach (string chat in chats)
+                {
+                    if (string.IsNullOrEmpty(chat)) continue;
+
+                    string[] datosChat = chat.Split(';');
+                    if (datosChat.Length < 3) continue;
+
+                    int idChat = int.Parse(datosChat[0]);
+                    string nomChat = datosChat[1];
+                    bool esIndividual = datosChat[2] == "1";
+
+                    ChatItem chatItem = new ChatItem(idChat, idUsuarioActual, nomChat, esIndividual);
+                    chatItem.Location = new Point(panel4.Width + 5, ypos);
+                    chatItem.Width = panelChats.Width - panel4.Width - 25;
+                    chatItem.ChatClicked += ChatItem_ChatClicked;
+
+                    panelChats.Controls.Add(chatItem);
+                    ypos += chatItem.Height + 5;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar chats: " + ex.Message);
+            }
+        }
+
+        private async void CargarMensajes(int idChat)
+        {
+            try
+            {
+                richTextBox2.Clear();
+
+                string mensage = "GETMESSAGES" + idChat;
+                string respuesta = await EnviarPeticion(mensage);
+                string[] partes = respuesta.Split('|');
+
+                if (partes[0] != "Success" || partes.Length < 2)
+                {
+                    return;
+                }
+
+                string[] mensajes = partes[1].Split(';');
+                int contadorMensajes = mensajes.Length;
+
+                foreach(string msg in mensajes)
+                {
+                    if (string.IsNullOrEmpty(msg)) continue;
+
+                    string[] datosMensaje = msg.Split(',');
+                    if (datosMensaje.Length < 3) continue;
+
+                    string nombre = datosMensaje[0];
+                    string textoMensaje = datosMensaje[1];
+                    string fecha = datosMensaje[2];
+
+                    richTextBox2.SelectionColor = Color.DarkBlue;
+                    richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Bold);
+                    richTextBox2.AppendText($"[{fecha}] {nombre}: ");
+
+                    richTextBox2.SelectionColor = Color.Black;
+                    richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Regular);
+
+                    if (textoMensaje.Trim().StartsWith("{\\rtf"))
+                    {
+                        try
+                        {
+                            IDataObject oldClipboardData = Clipboard.GetDataObject();
+                            Clipboard.SetText(textoMensaje, TextDataFormat.Rtf);
+                            richTextBox2.Paste();
+                            if (oldClipboardData != null)
+                            {
+                                Clipboard.SetDataObject(oldClipboardData);
+                            }
+                        }
+                        catch
+                        {
+                            richTextBox2.AppendText(textoMensaje);
+                        }
+                    }
+                    else
+                    {
+                        richTextBox2.AppendText(textoMensaje);
+                    }
+
+                    richTextBox2.AppendText(Environment.NewLine);
+                }
+
+                ultimoNumeroMensajes = contadorMensajes;
+                richTextBox2.SelectionStart = richTextBox2.Text.Length;
+                richTextBox2.ScrollToCaret();
+                
+            }
+            catch (Exception ex)
+            {
+            MessageBox.Show("Error al cargar mensajes: " + ex.Message);
+            }
+        }
+
+        private async void PictureBox2_Click(object sender, EventArgs e)
+        {
+            // Validar que hay un chat seleccionado
+            if (idChatActual == -1)
+            {
+                MessageBox.Show("Por favor selecciona un chat primero");
+                return;
+            }
+
+            // Validar mensaje no vacío
+            string textoPlano = richTextBox1.Text.Trim();
+            if (string.IsNullOrWhiteSpace(textoPlano))
+            {
+                MessageBox.Show("No puedes enviar un mensaje vacío");
+                return;
+            }
+
+            // Obtener el mensaje (RTF si tiene imágenes, texto plano si no)
+            string mensajeAGuardar;
+
+            if (richTextBox1.Rtf.Contains("\\pict"))
+            {
+                mensajeAGuardar = richTextBox1.Rtf;
+            }
+            else
+            {
+                mensajeAGuardar = textoPlano;
+            }
+
+            try
+            {
+                // Enviar mensaje al servidor
+                // IMPORTANTE: Reemplazar comas por otro carácter para no romper el protocolo
+                string mensajeLimpio = mensajeAGuardar.Replace(",", "<<COMA>>");
+                string mensaje = "SENDMESSAGE|" + idChatActual + "|" + idUsuarioActual + "|" + mensajeLimpio;
+                string respuesta = await EnviarPeticion(mensaje);
+                string[] partes = respuesta.Split('|');
+
+                if (partes[0] == "Success")
+                {
+                    // Recargar mensajes
+                    CargarMensajes(idChatActual);
+
+                    // Limpiar el campo de entrada
+                    richTextBox1.Clear();
+                }
+                else
+                {
+                    MessageBox.Show("Error al enviar mensaje");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al enviar mensaje: " + ex.Message);
+            }
         }
         /*
         private void ReemplazarEmojis()
@@ -160,6 +361,8 @@ namespace chat
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        /*
         private void CargarChats()
         {
             try
@@ -231,6 +434,7 @@ namespace chat
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        */
 
         private void ChatItem_ChatClicked(object sender, EventArgs e)
         {
@@ -254,6 +458,7 @@ namespace chat
             }
         }
 
+        /*
         private void CargarMensajes(int idChat)
         {
             try
@@ -338,22 +543,22 @@ namespace chat
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        */
 
-        private void TimerActualizar_Tick(object sender, EventArgs e)
+        private async void TimerActualizar_Tick(object sender, EventArgs e)
         {
             if (idChatActual == -1) return;
 
             try
             {
                 // Verificar si hay nuevos mensajes
-                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
-                {
-                    conn.Open();
-                    string query = "SELECT COUNT(*) FROM mensajes WHERE id_chat = @idChat";
-                    MySqlCommand cmd = new MySqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@idChat", idChatActual);
+                string mensaje = "COUNTMESSAGES|" + idChatActual;
+                string respuesta = await EnviarPeticion(mensaje);
+                string[] partes = respuesta.Split('|');
 
-                    int numMensajes = Convert.ToInt32(cmd.ExecuteScalar());
+                if (partes[0] == "Success" && partes.Length >= 2)
+                {
+                    int numMensajes = int.Parse(partes[1]);
 
                     // Si hay nuevos mensajes, recargar
                     if (numMensajes != ultimoNumeroMensajes)
@@ -375,7 +580,7 @@ namespace chat
                 // Ignorar errores del timer
             }
         }
-
+        /*
         private void PictureBox2_Click(object sender, EventArgs e)
         {
             // Validar que hay un chat seleccionado
@@ -439,7 +644,7 @@ namespace chat
                 MessageBox.Show("Error al enviar mensaje: " + ex.Message, "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
+        }*/
 
         private void RichTextBox1_KeyPress(object sender, KeyPressEventArgs e)
         {

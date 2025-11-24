@@ -91,6 +91,28 @@ namespace Servidor
                                 return "Error|Formato invalido";
                             return await Database.RegisterAsync(partes[1], partes[2]);
 
+                        case "GETCHATS":
+                            if (partes.Length < 2)
+                                return "Error|Formato invalido";
+                            return await Database.GetChatsAsync(int.Parse(partes[1]));
+
+                        case "GETMESSAGES":
+                            if (partes.Length < 2)
+                                return "Error|Formato invalido";
+                            return await Database.GetMessagesAsync(int.Parse(partes[1]));
+
+                        case "SENDMESSAGE":
+                            if (partes.Length < 4)
+                                return "Error|Formato invalido";
+                            // Restaurar las comas
+                            string mensajeOriginal = partes[3].Replace("<<COMA>>", ",");
+                            return await Database.SendMessageAsync(int.Parse(partes[1]), int.Parse(partes[2]), mensajeOriginal);
+
+                        case "COUNTMESSAGES":
+                            if (partes.Length < 2)
+                                return "Error|Formato invalido";
+                            return await Database.CountMessagesAsync(int.Parse(partes[1]));
+
                         default:
                             return "Error|Comando desconocido";
                     }
@@ -181,6 +203,178 @@ namespace Servidor
                     catch (MySqlException ex)
                     {
                         return $"Error|Error de BD: {ex.Message}";
+                    }
+                }
+
+                public static async Task<string> GetChatsAsync(int idUsuario)
+                {
+                    try
+                    {
+                        using (var conn = new MySqlConnection(ConnString))
+                        {
+                            await conn.OpenAsync();
+
+                            string sql = @"
+                                SELECT c.id_chat, c.nombre_chat, c.es_individual,
+                                       (SELECT u.nombre 
+                                        FROM usuarios_chats uc2 
+                                        JOIN usuarios u ON uc2.id_usuario = u.id_usuario
+                                        WHERE uc2.id_chat = c.id_chat 
+                                        AND uc2.id_usuario != @idUsuario
+                                        LIMIT 1) as nombre_otro_usuario
+                                FROM chats c
+                                INNER JOIN usuarios_chats uc ON c.id_chat = uc.id_chat
+                                WHERE uc.id_usuario = @idUsuario
+                                ORDER BY c.id_chat DESC";
+
+                            using (var cmd = new MySqlCommand(sql, conn))
+                            {
+                                cmd.Parameters.AddWithValue("@idUsuario", idUsuario);
+
+                                using (var reader = await cmd.ExecuteReaderAsync())
+                                {
+                                    string chats = "";
+
+                                    while (await reader.ReadAsync())
+                                    {
+                                        int idChat = reader.GetInt32(0);
+                                        bool esIndividual = reader.GetBoolean(2);
+                                        string nombreChat;
+
+                                        if (esIndividual)
+                                        {
+                                            nombreChat = reader.IsDBNull(3) ? "Usuario" : reader.GetString(3);
+                                        }
+                                        else
+                                        {
+                                            nombreChat = reader.IsDBNull(1) ? "Grupo sin nombre" : reader.GetString(1);
+                                        }
+
+                                        // Formato: idChat,nombreChat,esIndividual;
+                                        chats += idChat + "," + nombreChat + "," + (esIndividual ? "1" : "0") + ";";
+                                    }
+
+                                    if (chats.Length > 0)
+                                        chats = chats.TrimEnd(';');
+
+                                    return "Success|" + chats;
+                                }
+                            }
+                        }
+                    }
+                    catch (MySqlException ex)
+                    {
+                        return "Error|Error de BD: " + ex.Message;
+                    }
+                }
+
+                // NUEVO: Obtener mensajes de un chat
+                public static async Task<string> GetMessagesAsync(int idChat)
+                {
+                    try
+                    {
+                        using (var conn = new MySqlConnection(ConnString))
+                        {
+                            await conn.OpenAsync();
+
+                            string sql = @"
+                                SELECT m.mensaje, m.fecha, u.nombre
+                                FROM mensajes m
+                                JOIN usuarios u ON m.id_usuario = u.id_usuario
+                                WHERE m.id_chat = @idChat
+                                ORDER BY m.fecha ASC";
+
+                            using (var cmd = new MySqlCommand(sql, conn))
+                            {
+                                cmd.Parameters.AddWithValue("@idChat", idChat);
+
+                                using (var reader = await cmd.ExecuteReaderAsync())
+                                {
+                                    string mensajes = "";
+
+                                    while (await reader.ReadAsync())
+                                    {
+                                        string nombre = reader.GetString(2);
+                                        string mensaje = reader.GetString(0);
+                                        DateTime fecha = reader.GetDateTime(1);
+
+                                        // Reemplazar comas por otro carácter para no romper el protocolo
+                                        nombre = nombre.Replace(",", "");
+                                        mensaje = mensaje.Replace(",", "<<COMA>>");
+
+                                        // Formato: nombre,mensaje,fecha;
+                                        mensajes += nombre + "," + mensaje + "," + fecha.ToString("HH:mm") + ";";
+                                    }
+
+                                    if (mensajes.Length > 0)
+                                        mensajes = mensajes.TrimEnd(';');
+
+                                    return "Success|" + mensajes;
+                                }
+                            }
+                        }
+                    }
+                    catch (MySqlException ex)
+                    {
+                        return "Error|Error de BD: " + ex.Message;
+                    }
+                }
+
+                // NUEVO: Enviar mensaje
+                public static async Task<string> SendMessageAsync(int idChat, int idUsuario, string mensaje)
+                {
+                    try
+                    {
+                        using (var conn = new MySqlConnection(ConnString))
+                        {
+                            await conn.OpenAsync();
+
+                            string sql = @"
+                                INSERT INTO mensajes (id_chat, id_usuario, mensaje, fecha)
+                                VALUES (@idChat, @idUsuario, @mensaje, NOW())";
+
+                            using (var cmd = new MySqlCommand(sql, conn))
+                            {
+                                cmd.Parameters.AddWithValue("@idChat", idChat);
+                                cmd.Parameters.AddWithValue("@idUsuario", idUsuario);
+                                cmd.Parameters.AddWithValue("@mensaje", mensaje);
+
+                                await cmd.ExecuteNonQueryAsync();
+
+                                return "Success|Mensaje enviado";
+                            }
+                        }
+                    }
+                    catch (MySqlException ex)
+                    {
+                        return "Error|Error de BD: " + ex.Message;
+                    }
+                }
+
+                // NUEVO: Contar mensajes de un chat
+                public static async Task<string> CountMessagesAsync(int idChat)
+                {
+                    try
+                    {
+                        using (var conn = new MySqlConnection(ConnString))
+                        {
+                            await conn.OpenAsync();
+
+                            string sql = "SELECT COUNT(*) FROM mensajes WHERE id_chat = @idChat";
+
+                            using (var cmd = new MySqlCommand(sql, conn))
+                            {
+                                cmd.Parameters.AddWithValue("@idChat", idChat);
+
+                                int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+
+                                return "Success|" + count;
+                            }
+                        }
+                    }
+                    catch (MySqlException ex)
+                    {
+                        return "Error|Error de BD: " + ex.Message;
                     }
                 }
             }
