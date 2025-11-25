@@ -247,7 +247,7 @@ namespace chat
             this.richTextBox1.Size = new System.Drawing.Size(535, 26);
             this.richTextBox1.TabIndex = 0;
             this.richTextBox1.Text = "";
-            this.richTextBox1.TextChanged += new System.EventHandler(this.richTextBox1_TextChanged);
+           // this.richTextBox1.TextChanged += new System.EventHandler(this.richTextBox1_TextChanged);
             // 
             // panel5
             // 
@@ -316,7 +316,7 @@ namespace chat
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Panel panelChats;
         private System.Windows.Forms.Panel panel2;
-        private MySql.Data.MySqlClient.MySqlCommand mySqlCommand1;
+       // private MySql.Data.MySqlClient.MySqlCommand mySqlCommand1;
         private System.Windows.Forms.PictureBox fotoPerfil;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button button1;

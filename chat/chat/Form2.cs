@@ -12,6 +12,7 @@ using System.Windows.Forms;
 
 namespace chat
 {
+
     public partial class menuChat : Form
     {
         private int idUsuarioActual;
@@ -20,6 +21,8 @@ namespace chat
         private bool reemplazando = false;
         private System.Windows.Forms.Timer timerActualizar;
         private int ultimoNumeroMensajes = 0;
+        string IPserver = "127.0.0.1";
+        int PortServer = 13000;
 
         /*
         private void InsertarTextoConEmojis(RichTextBox destino, string texto)
@@ -92,7 +95,7 @@ namespace chat
             {
                 using (TcpClient client = new TcpClient())
                 {
-                    await client.ConnectAsync("127.0.0.1", 13000);
+                    await client.ConnectAsync(IPserver, PortServer);
 
                     using (NetworkStream stream = client.GetStream())
                     {
@@ -107,7 +110,8 @@ namespace chat
             }
             catch (Exception ex)
             {
-                return "Error|No se pudo conectar al servidor";
+                return "Error|No se pudo conectar al servidor" + ex;
+                ;
             }
         }
 
@@ -115,7 +119,7 @@ namespace chat
         {
             try
             {
-                string mensaje = "GETCHATS" + idUsuarioActual;
+                string mensaje = "GETCHATS|" + idUsuarioActual;
                 string respuesta = await EnviarPeticion(mensaje);
                 string[] partes = respuesta.Split('|');
 
@@ -125,7 +129,7 @@ namespace chat
                     return;
                 }
 
-                string[] chats = partes[1].Split(';');
+                string[] chats = partes[1].Split(',');
                 int ypos = 0;
 
                 foreach (string chat in chats)
@@ -160,7 +164,7 @@ namespace chat
             {
                 richTextBox2.Clear();
 
-                string mensage = "GETMESSAGES" + idChat;
+                string mensage = "GETMESSAGES|" + idChat;
                 string respuesta = await EnviarPeticion(mensage);
                 string[] partes = respuesta.Split('|');
 
@@ -169,7 +173,7 @@ namespace chat
                     return;
                 }
 
-                string[] mensajes = partes[1].Split(';');
+                string[] mensajes = partes[1].Split(',');
                 int contadorMensajes = mensajes.Length;
 
                 foreach(string msg in mensajes)
@@ -180,7 +184,7 @@ namespace chat
                     if (datosMensaje.Length < 3) continue;
 
                     string nombre = datosMensaje[0];
-                    string textoMensaje = datosMensaje[1];
+                    string textoMensaje = datosMensaje[1].Replace("<<COMA>>", ",");
                     string fecha = datosMensaje[2];
 
                     richTextBox2.SelectionColor = Color.DarkBlue;
@@ -228,14 +232,12 @@ namespace chat
 
         private async void PictureBox2_Click(object sender, EventArgs e)
         {
-            // Validar que hay un chat seleccionado
             if (idChatActual == -1)
             {
                 MessageBox.Show("Por favor selecciona un chat primero");
                 return;
             }
 
-            // Validar mensaje no vacío
             string textoPlano = richTextBox1.Text.Trim();
             if (string.IsNullOrWhiteSpace(textoPlano))
             {
@@ -243,7 +245,6 @@ namespace chat
                 return;
             }
 
-            // Obtener el mensaje (RTF si tiene imágenes, texto plano si no)
             string mensajeAGuardar;
 
             if (richTextBox1.Rtf.Contains("\\pict"))
@@ -312,130 +313,7 @@ namespace chat
             richTextBox1.Select(Math.Min(cursorPos, richTextBox1.TextLength), 0);
         }
         */
-        private void Label4_Click(object sender, EventArgs e)
-        {
-            if (idChatActual == -1)
-            {
-                MessageBox.Show("Por favor selecciona un chat primero", "Aviso",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            // Obtener información del chat actual
-            try
-            {
-                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
-                {
-                    conn.Open();
-
-                    string query = @"
-                SELECT c.nombre_chat, c.es_individual
-                FROM chats c
-                WHERE c.id_chat = @idChat";
-
-                    MySqlCommand cmd = new MySqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@idChat", idChatActual);
-
-                    MySqlDataReader reader = cmd.ExecuteReader();
-
-                    if (reader.Read())
-                    {
-                        bool esIndividual = reader.GetBoolean("es_individual");
-                        string nombreChat = label4.Text; // Ya lo tenemos en el label
-
-                        reader.Close();
-
-                        // Abrir el formulario de integrantes
-                        FormVerIntegrantes formIntegrantes = new FormVerIntegrantes(
-                            idChatActual,
-                            nombreChat,
-                            esIndividual
-                        );
-                        formIntegrantes.ShowDialog();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al cargar información: " + ex.Message, "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        /*
-        private void CargarChats()
-        {
-            try
-            {
-                // Limpiar chats anteriores
-                foreach (Control ctrl in panelChats.Controls.OfType<ChatItem>().ToList())
-                {
-                    ctrl.Dispose();
-                }
-
-                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
-                {
-                    conn.Open();
-                    string query = @"
-                        SELECT c.id_chat, c.nombre_chat, c.es_individual,
-                               (SELECT u.nombre 
-                                FROM usuarios_chats uc2 
-                                JOIN usuarios u ON uc2.id_usuario = u.id_usuario
-                                WHERE uc2.id_chat = c.id_chat 
-                                AND uc2.id_usuario != @idUsuario
-                                LIMIT 1) as nombre_otro_usuario
-                        FROM chats c
-                        INNER JOIN usuarios_chats uc ON c.id_chat = uc.id_chat
-                        WHERE uc.id_usuario = @idUsuario
-                        ORDER BY c.id_chat DESC";
-
-                    MySqlCommand cmd = new MySqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@idUsuario", idUsuarioActual);
-
-                    MySqlDataReader reader = cmd.ExecuteReader();
-
-                    int yPosition = 0;
-
-                    while (reader.Read())
-                    {
-                        int idChat = reader.GetInt32("id_chat");
-                        bool esIndividual = reader.GetBoolean("es_individual");
-                        string nombreChat;
-
-                        if (esIndividual)
-                        {
-                            nombreChat = reader.IsDBNull(reader.GetOrdinal("nombre_otro_usuario"))
-                                ? "Usuario"
-                                : reader.GetString("nombre_otro_usuario");
-                        }
-                        else
-                        {
-                            nombreChat = reader.IsDBNull(reader.GetOrdinal("nombre_chat"))
-                                ? "Grupo sin nombre"
-                                : reader.GetString("nombre_chat");
-                        }
-
-                        // Crear ChatItem
-                        ChatItem chatItem = new ChatItem(idChat, idUsuarioActual, nombreChat, esIndividual);
-                        chatItem.Location = new Point(panel4.Width + 5, yPosition);
-                        chatItem.Width = panelChats.Width - panel4.Width - 25;
-                        chatItem.ChatClicked += ChatItem_ChatClicked;
-
-                        panelChats.Controls.Add(chatItem);
-                        yPosition += chatItem.Height + 5;
-                    }
-
-                    reader.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al cargar chats: " + ex.Message, "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-        */
-
+        
         private void ChatItem_ChatClicked(object sender, EventArgs e)
         {
             ChatItem chatItem = (ChatItem)sender;
@@ -457,93 +335,6 @@ namespace chat
                 item.BackColor = (item.IdChat == idChatActual) ? Color.LightBlue : Color.White;
             }
         }
-
-        /*
-        private void CargarMensajes(int idChat)
-        {
-            try
-            {
-                richTextBox2.Clear();
-
-                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
-                {
-                    conn.Open();
-                    string query = @"
-                        SELECT m.mensaje, m.fecha, u.nombre
-                        FROM mensajes m
-                        JOIN usuarios u ON m.id_usuario = u.id_usuario
-                        WHERE m.id_chat = @idChat
-                        ORDER BY m.fecha ASC";
-
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@idChat", idChat);
-
-                        using (MySqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            int contadorMensajes = 0;
-
-                            while (reader.Read())
-                            {
-                                contadorMensajes++;
-                                string nombre = reader.GetString("nombre");
-                                string mensaje = reader.GetString("mensaje");
-                                DateTime fecha = reader.GetDateTime("fecha");
-
-                                // Agregar encabezado del mensaje
-                                richTextBox2.SelectionColor = Color.DarkBlue;
-                                richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Bold);
-                                richTextBox2.AppendText($"[{fecha:HH:mm}] {nombre}: ");
-
-                                // Resetear formato
-                                richTextBox2.SelectionColor = Color.Black;
-                                richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Regular);
-
-                                // Verificar si es RTF
-                                if (mensaje.Trim().StartsWith("{\\rtf"))
-                                {
-                                    try
-                                    {
-                                        IDataObject oldClipboardData = Clipboard.GetDataObject();
-                                        Clipboard.SetText(mensaje, TextDataFormat.Rtf);
-
-                                        int startPos = richTextBox2.SelectionStart;
-                                        richTextBox2.Paste();
-
-                                        if (oldClipboardData != null)
-                                        {
-                                            Clipboard.SetDataObject(oldClipboardData);
-                                        }
-                                    }
-                                    catch
-                                    {
-                                        // Si falla el RTF, mostrar como texto plano
-                                        richTextBox2.AppendText(mensaje);
-                                    }
-                                }
-                                else
-                                {
-                                }
-
-                                richTextBox2.AppendText(Environment.NewLine);
-                            }
-
-                            ultimoNumeroMensajes = contadorMensajes;
-                        }
-                    }
-                }
-
-                // Scroll automático al final
-                richTextBox2.SelectionStart = richTextBox2.Text.Length;
-                richTextBox2.ScrollToCaret();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al cargar mensajes: " + ex.Message, "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-        */
 
         private async void TimerActualizar_Tick(object sender, EventArgs e)
         {
@@ -577,74 +368,8 @@ namespace chat
             }
             catch
             {
-                // Ignorar errores del timer
             }
         }
-        /*
-        private void PictureBox2_Click(object sender, EventArgs e)
-        {
-            // Validar que hay un chat seleccionado
-            if (idChatActual == -1)
-            {
-                MessageBox.Show("Por favor selecciona un chat primero", "Aviso",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            // Validar mensaje no vacío
-            string textoPlano = richTextBox1.Text.Trim();
-            if (string.IsNullOrWhiteSpace(textoPlano))
-            {
-                MessageBox.Show("No puedes enviar un mensaje vacío", "Aviso",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            // Obtener el mensaje (RTF si tiene imágenes, texto plano si no)
-            string mensajeAGuardar;
-
-            // Verificar si hay imágenes (emojis) en el mensaje
-            if (richTextBox1.Rtf.Contains("\\pict"))
-            {
-                // Tiene imágenes, guardar como RTF
-                mensajeAGuardar = richTextBox1.Rtf;
-            }
-            else
-            {
-                // Solo texto, guardar el texto plano
-                mensajeAGuardar = textoPlano;
-            }
-
-            try
-            {
-                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
-                {
-                    conn.Open();
-                    string query = @"
-                        INSERT INTO mensajes (id_chat, id_usuario, mensaje, fecha)
-                        VALUES (@idChat, @idUsuario, @mensaje, NOW())";
-
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@idChat", idChatActual);
-                        cmd.Parameters.AddWithValue("@idUsuario", idUsuarioActual);
-                        cmd.Parameters.AddWithValue("@mensaje", mensajeAGuardar);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-
-                // Recargar mensajes
-                CargarMensajes(idChatActual);
-
-                // Limpiar el campo de entrada
-                richTextBox1.Clear();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al enviar mensaje: " + ex.Message, "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }*/
 
         private void RichTextBox1_KeyPress(object sender, KeyPressEventArgs e)
         {
@@ -673,7 +398,7 @@ namespace chat
             // Los emojis se reemplazan en KeyPress
         }
         */
-        
+
         /*
         private void InsertarImagenEnRichTextBox(Image imagen)
         {
@@ -701,33 +426,100 @@ namespace chat
             }
         }
         */
-        
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
-            // Mostrar opciones: Agregar Usuario o Crear Grupo
-            
+            FormAgregarUsuario formAgregar = new FormAgregarUsuario(idUsuarioActual);
 
-            
-                // Agregar usuario individual
-                FormAgregarUsuario formAgregar = new FormAgregarUsuario(idUsuarioActual);
+            if (formAgregar.ShowDialog() == DialogResult.OK)
+            {
+                int idUsuarioSeleccionado = formAgregar.IdUsuarioSeleccionado;
+                string nombreUsuarioSeleccionado = formAgregar.NombreUsuarioSeleccionado;
 
-               
-                    int idUsuarioSeleccionado = formAgregar.IdUsuarioSeleccionado;
-                    string nombreUsuarioSeleccionado = formAgregar.NombreUsuarioSeleccionado;
+                // Verificar si ya existe el chat
+                string mensaje = "VERIFYCHAT|" + idUsuarioActual + "|" + idUsuarioSeleccionado;
+                string respuesta = await EnviarPeticion(mensaje);
+                string[] partes = respuesta.Split('|');
 
-                    int? idChatExistente = VerificarChatIndividualExistente(idUsuarioSeleccionado);
+                if (partes[0] == "Success")
+                {
+                    MessageBox.Show($"Ya tienes un chat con {nombreUsuarioSeleccionado}");
+                    CargarChats();
+                }
+                else
+                {
+                    // Crear nuevo chat
+                    mensaje = "CREATECHAT|" + idUsuarioActual + "|" + idUsuarioSeleccionado;
+                    respuesta = await EnviarPeticion(mensaje);
+                    partes = respuesta.Split('|');
 
-                    if (idChatExistente.HasValue)
+                    if (partes[0] == "Success")
                     {
-                        MessageBox.Show($"Ya tienes un chat con {nombreUsuarioSeleccionado}",
-                            "Información", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"Chat con {nombreUsuarioSeleccionado} creado exitosamente");
                         CargarChats();
                     }
                     else
                     {
-                        CrearChatIndividual(idUsuarioSeleccionado, nombreUsuarioSeleccionado);
+                        MessageBox.Show("Error al crear chat");
                     }
+                }
+            }
+        }
+
+        private async void button2_Click(object sender, EventArgs e)
+        {
+            FormCrearGrupo formGrupo = new FormCrearGrupo(idUsuarioActual);
+
+            if (formGrupo.ShowDialog() == DialogResult.OK)
+            {
+                string nombreGrupo = formGrupo.NombreGrupo;
+                List<int> miembros = formGrupo.UsuariosSeleccionados;
+
+                // Convertir lista a string
+                string miembrosStr = string.Join(",", miembros);
+
+                string mensaje = "CREATEGROUP|" + idUsuarioActual + "|" + nombreGrupo + "|" + miembrosStr;
+                string respuesta = await EnviarPeticion(mensaje);
+                string[] partes = respuesta.Split('|');
+
+                if (partes[0] == "Success")
+                {
+                    MessageBox.Show($"Grupo '{nombreGrupo}' creado exitosamente con {miembros.Count} miembros");
+                    CargarChats();
+                }
+                else
+                {
+                    MessageBox.Show("Error al crear grupo");
+                }
+            }
+        }
+
+        private async void Label4_Click(object sender, EventArgs e)
+        {
+            if (idChatActual == -1)
+            {
+                MessageBox.Show("Por favor selecciona un chat primero");
+                return;
+            }
+
+            string mensaje = "GETCHATMEMBERS|" + idChatActual;
+            string respuesta = await EnviarPeticion(mensaje);
+            string[] partes = respuesta.Split('|');
+
+            if (partes[0] == "Success" && partes.Length >= 2)
+            {
+                // Abrir formulario de integrantes
+                FormVerIntegrantes formIntegrantes = new FormVerIntegrantes(
+                    idChatActual,
+                    label4.Text,
+                    true/*partes[1]*/ // String con los miembros
+                );
+                formIntegrantes.ShowDialog();
+            }
+            else
+            {
+                MessageBox.Show("Error al cargar integrantes");
+            }
         }
 
         private void logOut_Button_Click(object sender, EventArgs e)
@@ -753,7 +545,8 @@ namespace chat
                 loginForm.Show();
             }
         }
-
+        /*
+        //cambiar
         private void CrearChatIndividual(int idOtroUsuario, string nombreOtroUsuario)
         {
             try
@@ -802,8 +595,9 @@ namespace chat
                 MessageBox.Show("Error al crear chat: " + ex.Message, "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
+        }*/
+        /*
+        //cambiar
         private void CrearGrupo(string nombreGrupo, List<int> miembros)
         {
             try
@@ -859,7 +653,9 @@ namespace chat
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
+        */
+        /*
+       //cambiar
         private int? VerificarChatIndividualExistente(int idOtroUsuario)
         {
             try
@@ -901,7 +697,7 @@ namespace chat
 
             return null;
         }
-
+        */
         private void panel3_Paint(object sender, PaintEventArgs e) { }
         private void panel6_Paint(object sender, PaintEventArgs e) { }
         private void label3_Click(object sender, EventArgs e) { }
@@ -911,18 +707,6 @@ namespace chat
             timerActualizar?.Stop();
             base.OnFormClosing(e);
         }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            FormCrearGrupo formGrupo = new FormCrearGrupo(idUsuarioActual);
-
-            if (formGrupo.ShowDialog() == DialogResult.OK)
-            {
-                string nombreGrupo = formGrupo.NombreGrupo;
-                List<int> miembros = formGrupo.UsuariosSeleccionados;
-
-                CrearGrupo(nombreGrupo, miembros);
-            }
-        }
+        
     }
 }

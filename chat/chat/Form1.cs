@@ -9,6 +9,8 @@ namespace chat
 {
     public partial class Form1 : Form
     {
+        string IPserver = "127.0.0.1";
+        int PortServer = 13000;
         public Form1()
         {
             InitializeComponent();
@@ -138,7 +140,7 @@ namespace chat
         {
             using (TcpClient client = new TcpClient())
             {
-                await client.ConnectAsync("127.0.0.1", 13000);
+                await client.ConnectAsync(IPserver, PortServer);
 
                 using (NetworkStream stream = client.GetStream())
                 {
