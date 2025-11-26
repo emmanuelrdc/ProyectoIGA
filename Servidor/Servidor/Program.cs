@@ -67,84 +67,7 @@ namespace Servidor
                 }
 
             }
-            /*
-            private static async Task<string> ProcessCommandAsync(string message)
-            {
-                try
-                {
-                    string[] partes = message.Split('|');
-                    if (partes.Length == 0)
-                    {
-                        return "Error|Mensaje vacio";
-                    }
-                    string comando = partes[0].ToUpper();
 
-                    switch (comando)
-                    {
-                        case "LOGIN":
-                            if (partes.Length < 3)
-                                return "Error|Formato invalido";
-                            return await Database.LoginAsync(partes[1], partes[2]);
-
-                        case "REGISTER":
-                            if (partes.Length < 3)
-                                return "Error|Formato invalido";
-                            return await Database.RegisterAsync(partes[1], partes[2]);
-
-                        case "GETCHATS":
-                            if (partes.Length < 2)
-                                return "Error|Formato invalido";
-                            return await Database.GetChatsAsync(int.Parse(partes[1]));
-
-                        case "GETMESSAGES":
-                            if (partes.Length < 2)
-                                return "Error|Formato invalido";
-                            return await Database.GetMessagesAsync(int.Parse(partes[1]));
-
-                        case "SENDMESSAGE":
-                            if (partes.Length < 4)
-                                return "Error|Formato invalido";
-                            // Restaurar las comas
-                            string mensajeOriginal = partes[3].Replace("<<COMA>>", ",");
-                            return await Database.SendMessageAsync(int.Parse(partes[1]), int.Parse(partes[2]), mensajeOriginal);
-
-                        case "COUNTMESSAGES":
-                            if (partes.Length < 2)
-                                return "Error|Formato invalido";
-                            return await Database.CountMessagesAsync(int.Parse(partes[1]));
-
-                        case "CREATECHAT":
-                            if (partes.Length < 3)
-                                return "Error|Formato invalido";
-                            return await Database.CreateChatAsync(int.Parse(partes[1]), int.Parse(partes[2]));
-
-                        case "VERIFYCHAT":
-                            if (partes.Length < 3)
-                                return "Error|Formato invalido";
-                            return await Database.VerifyChatAsync(int.Parse(partes[1]), int.Parse(partes[2]));
-
-                        case "CREATEGROUP":
-                            if (partes.Length < 3)
-                                return "Error|Formato invalido";
-                            return await Database.CreateGroupAsync(int.Parse(partes[1]), partes[2], partes[3]);
-
-                        case "GETALLUSERS":
-                            if (partes.Length < 2)
-                                return "Error|Formato invalido";
-                            return await Database.GetAllUsersAsync(int.Parse(partes[1]));
-
-                        case "GETCHATMEMBERS":
-                            if (partes.Length < 2)
-                                return "Error|Formato invalido";
-                            return await Database.GetChatMembersAsync(int.Parse(partes[1]));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return $"Error|{ex.Message}";
-                }
-            }
-            */
             private static async Task<string> ProcessCommandAsync(string message)
             {
                 try
@@ -225,7 +148,7 @@ namespace Servidor
             }
             static class Database
             {
-                private const string ConnString = "Server=localhost; Port=3306; Database=new_schema; Uid=root; Pwd=root1234;";
+                private const string ConnString = "Server=localhost; Port=3306; Database=new_schema; Uid=root; Pwd=root;";
 
                 public static async Task<string> LoginAsync(string usuario, string password)
                 {
@@ -481,7 +404,6 @@ namespace Servidor
                     }
                 }
 
-                // Crear chat individual
                 // Crear chat individual
                 public static async Task<string> CreateChatAsync(int idUsuario1, int idUsuario2)
                 {

@@ -129,7 +129,7 @@ namespace chat
                     return;
                 }
 
-                string[] chats = partes[1].Split(',');
+                string[] chats = partes[1].Split(';');
                 int ypos = 0;
 
                 foreach (string chat in chats)
@@ -173,7 +173,7 @@ namespace chat
                     return;
                 }
 
-                string[] mensajes = partes[1].Split(',');
+                string[] mensajes = partes[1].Split(';');
                 int contadorMensajes = mensajes.Length;
 
                 foreach(string msg in mensajes)

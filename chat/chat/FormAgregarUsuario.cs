@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Sockets;
 using System.Windows.Forms;
 
 namespace chat
@@ -14,8 +15,11 @@ namespace chat
     public partial class FormAgregarUsuario : Form
     {
         private int idUsuarioActual;
+        private DataTable Usuarios;
         public int IdUsuarioSeleccionado { get; private set; }
         public string NombreUsuarioSeleccionado { get; private set; }
+        string IPserver = "127.0.0.1";
+        int PortServer = 13000;
         public FormAgregarUsuario(int idUsuario)
         {
             InitializeComponent();
@@ -26,36 +30,75 @@ namespace chat
         {
             CargarUsuarios();
         }
-        private void CargarUsuarios()
+
+        private async Task<string> EnviarPeticion(string mensaje)
         {
             try
             {
-                // USAR DatabaseConnection.ConnectionString
-                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
+                using (TcpClient client = new TcpClient())
                 {
-                    conn.Open();
-                    // Cargar todos los usuarios excepto el usuario actual
-                    string query = "SELECT id_usuario, nombre FROM usuarios WHERE id_usuario != @idActual ORDER BY nombre";
-                    MySqlCommand cmd = new MySqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@idActual", idUsuarioActual);
+                    await client.ConnectAsync(IPserver, PortServer);
 
-                    MySqlDataAdapter adapter = new MySqlDataAdapter(cmd);
-                    dtUsuarios = new DataTable();
-                    adapter.Fill(dtUsuarios);
+                    using (NetworkStream stream = client.GetStream())
+                    {
+                        byte[] data = Encoding.UTF8.GetBytes(mensaje);
+                        await stream.WriteAsync(data, 0, data.Length);
 
-                    ActualizarListBox();
+                        byte[] buffer = new byte[4096];
+                        int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                        return Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar usuarios: " + ex.Message, "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return "Error|No se pudo conectar al servidor";
             }
         }
+
+        private async void CargarUsuarios()
+        {
+            try
+            {
+                string mensaje = "GETALLUSERS|" + idUsuarioActual;
+                string respuesta = await EnviarPeticion(mensaje);
+                string[] partes = respuesta.Split('|');
+
+                if (partes[0] != "Success" || partes.Length < 2)
+                {
+                    MessageBox.Show("Error al cargar usuarios");
+                    return;
+                }
+
+                Usuarios = new DataTable();
+                Usuarios.Columns.Add("id_usuario", typeof(int));
+                Usuarios.Columns.Add("nombre", typeof(string));
+
+                string[] user = partes[1].Split(';');
+                foreach (string u in user)
+                {
+                    if (string.IsNullOrEmpty(u)) continue;
+
+                    string[] datos = u.Split(',');
+                    if (datos.Length < 2) continue;
+
+                    DataRow row = Usuarios.NewRow();
+                    row["id_usuario"] = int.Parse(datos[0]);
+                    row["nombre"] = datos[1];
+                    Usuarios.Rows.Add(row);
+
+                }
+                ActualizarListBox();
+            }catch(Exception e)
+            {
+                MessageBox.Show("Error al cargar los usuarioss:" + e.Message);
+            }
+        }
+
         private void ActualizarListBox()
         {
             listBoxUsuarios.Items.Clear();
-            foreach (DataRow row in dtUsuarios.Rows)
+            foreach (DataRow row in Usuarios.Rows)
             {
                 listBoxUsuarios.Items.Add(new UsuarioItem
                 {
@@ -76,7 +119,7 @@ namespace chat
             }
 
             listBoxUsuarios.Items.Clear();
-            foreach (DataRow row in  dtUsuarios.Rows)
+            foreach (DataRow row in  Usuarios.Rows)
             {
                 string nombre = row["nombre"].ToString().ToLower();
                 if (nombre.Contains(filtro))

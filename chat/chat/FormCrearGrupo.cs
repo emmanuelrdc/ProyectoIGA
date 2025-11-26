@@ -1,4 +1,5 @@
-﻿using MySql.Data.MySqlClient;
+﻿using System.Net.Sockets;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -17,47 +18,83 @@ namespace chat
         private DataTable dtUsuarios;
         public string NombreGrupo { get; private set; }
         public List<int> UsuariosSeleccionados { get; private set; }
+        string IPserver = "127.0.0.1";
+        int Port = 13000;
 
         public FormCrearGrupo(int idUsuario)
         {
             InitializeComponent();
             idUsuarioActual = idUsuario;
             UsuariosSeleccionados = new List<int>();
-            CargarUsuarios();
+            this.Load += FormCrearGrupo_load;
+            
         }
-        private void CargarUsuarios()
+        private async void FormCrearGrupo_load(object sender, EventArgs e)
+        {
+            await CargarUsuarios();
+        }
+
+        private async Task<string> EnviarPeticion(string mensaje)
         {
             try
             {
-                using (MySqlConnection conn = new MySqlConnection(DatabaseConnection.ConnectionString))
+                using (TcpClient client = new TcpClient())
                 {
-                    conn.Open();
+                    await client.ConnectAsync(IPserver, Port);
 
-                    // Cargar solo usuarios con los que ya tienes chat
-                    string query = @"
-                        SELECT DISTINCT u.id_usuario, u.nombre
-                        FROM usuarios u
-                        INNER JOIN usuarios_chats uc1 ON u.id_usuario = uc1.id_usuario
-                        INNER JOIN usuarios_chats uc2 ON uc1.id_chat = uc2.id_chat
-                        WHERE uc2.id_usuario = @idUsuario
-                        AND u.id_usuario != @idUsuario
-                        ORDER BY u.nombre";
-
-                    MySqlCommand cmd = new MySqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@idUsuario", idUsuarioActual);
-
-                    MySqlDataAdapter adapter = new MySqlDataAdapter(cmd);
-                    dtUsuarios = new DataTable();
-                    adapter.Fill(dtUsuarios);
-
-                    foreach (DataRow row in dtUsuarios.Rows)
+                    using (NetworkStream stream = client.GetStream())
                     {
-                        checkedListBoxUsuarios.Items.Add(new UsuarioItem
-                        {
-                            Id = Convert.ToInt32(row["id_usuario"]),
-                            Nombre = row["nombre"].ToString()
-                        });
+                        byte[] data = Encoding.UTF8.GetBytes(mensaje);
+                        await stream.WriteAsync(data, 0, data.Length);
+
+                        byte[] buffer = new byte[4096];
+                        int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                        return Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     }
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error|No se pudo conectar al servidor";
+            }
+        }
+
+        private async Task CargarUsuarios()
+        {
+            try
+            {
+                string mensaje = "GETALLUSERS|" + idUsuarioActual;
+                string respuesta = await EnviarPeticion(mensaje);
+                string[] partes = respuesta.Split('|');
+
+                if (partes[0] != "Success" || partes.Length < 2)
+                {
+                    MessageBox.Show("Error al cargar usuarios");
+                    return;
+                }
+
+                dtUsuarios = new DataTable();
+                dtUsuarios.Columns.Add("id_usuario", typeof(int));
+                dtUsuarios.Columns.Add("nombre", typeof(string));
+
+                string[] users = partes[1].Split(',');
+                foreach (string u in users)
+                {
+                    if (string.IsNullOrEmpty(u)) continue;
+
+                    string[] datos = u.Split(',');
+                    if (datos.Length < 2) continue;
+
+                    DataRow row = dtUsuarios.NewRow();
+                    row["id_usuario"] = int.Parse(datos[0]);
+                    row["nombre"] = datos[1];
+                    dtUsuarios.Rows.Add(row);
+
+                    checkedListBoxUsuarios.Items.Add(new UsuarioItem
+                    {
+                        Id = int.Parse(datos[0]),
+                        Nombre = datos[1]
+                    });
                 }
             }
             catch (Exception ex)
@@ -69,7 +106,6 @@ namespace chat
 
         private void checkedListBoxUsuarios_ItemCheck(object sender, ItemCheckEventArgs e)
         {
-            // Actualizar contador (se ejecuta después del cambio)
             this.BeginInvoke(new Action(() =>
             {
                 int contador = checkedListBoxUsuarios.CheckedItems.Count;
