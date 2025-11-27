@@ -27,44 +27,32 @@ namespace chat
         private FormWindowState estadoAnterior;
         private Rectangle limiteAnterior;
 
-        private bool cargado = false;
+        
+            string txtOrig = richTextBox1.Text;
+            string txtMod = txtOrig;
 
-        /*
-        private void InsertarTextoConEmojis(RichTextBox destino, string texto)
-        {
-            int pos = 0;
-            while (pos < texto.Length)
+            foreach(var emoji in mapaEmojis)
             {
-                bool encontrado = false;
+                if (txtMod.Contains(emoji.Key));
+                    txtMod = txtMod.Replace(emoji.Key, emoji.Value);
+            }
 
-                // Buscar emojis ordenados por longitud (más largos primero)
-                foreach (var kvp in emojis.OrderByDescending(x => x.Key.Length))
-                {
-                    if (pos + kvp.Key.Length <= texto.Length &&
-                        texto.Substring(pos, kvp.Key.Length) == kvp.Key)
-                    {
-                        InsertarImagenEnChat(destino, kvp.Value);
-                        pos += kvp.Key.Length;
-                        encontrado = true;
-                        break;
-                    }
-                }
-
-                if (!encontrado)
-                {
-                    destino.AppendText(texto[pos].ToString());
-                    pos++;
-                }
+            if (txtMod != txtOrig)
+            {
+                int cursorPiv = richTextBox1.SelectionStart;
+                richTextBox1.Text = txtMod;
+                richTextBox1.SelectionStart = cursorPiv - 1;
             }
         }
-       
-        private Dictionary<string, Image> emojis = new Dictionary<string, Image>()
-        {
-            { ":)", Properties.Resources.sonrisa},
-            { ":(", Properties.Resources.llorando},
-            { "<3", Properties.Resources.corazon}
-        };*/
 
+        Dictionary<string, string> mapaEmojis = new Dictionary<string, string>()
+        {
+            { ":)", "🙂" },
+            { ":D", "😃" },
+            { ";)", "😉" },
+            { "<3", "❤️" },
+            { ":(", "😔" }
+        };
 
         public menuChat(int idUsuario, string nombreUsuario)
         {
@@ -548,37 +536,8 @@ namespace chat
                 MessageBox.Show("Error al enviar mensaje: " + ex.Message);
             }
         }
-        /*
-        private void ReemplazarEmojis()
-        {
-            int cursorPos = richTextBox1.SelectionStart;
-
-            foreach (var kvp in emojis)
-            {
-                string textoEmoji = kvp.Key;
-                Image imagenEmoji = kvp.Value;
-
-                // Buscar desde el principio
-                int indice = 0;
-                while (indice < richTextBox1.Text.Length)
-                {
-                    indice = richTextBox1.Find(textoEmoji, indice, RichTextBoxFinds.None);
-
-                    if (indice == -1) break;
-
-                    richTextBox1.Select(indice, textoEmoji.Length);
-                    InsertarImagenEnRichTextBox(imagenEmoji);
-
-                    // Ajustar el índice después del reemplazo
-                    indice = richTextBox1.SelectionStart;
-                }
-            }
-
-            // Restaurar posición del cursor
-            richTextBox1.Select(Math.Min(cursorPos, richTextBox1.TextLength), 0);
-        }
         */
-
+        
         private void ChatItem_ChatClicked(object sender, EventArgs e)
         {
             try
@@ -1036,6 +995,15 @@ namespace chat
             timerActualizar?.Stop();
             base.OnFormClosing(e);
         }
-        
+
+        private void richTextBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void richTextBox2_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }

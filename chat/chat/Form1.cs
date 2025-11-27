@@ -310,5 +310,10 @@ namespace chat
             richTextBox2.ForeColor = Color.Gray;
             AjustarPosicionCentrada();
         }
+
+        private void groupBox1_Enter(object sender, EventArgs e)
+        {
+
+        }
     }
 }
