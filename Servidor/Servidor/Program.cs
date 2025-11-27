@@ -148,7 +148,7 @@ namespace Servidor
             }
             static class Database
             {
-                private const string ConnString = "Server=localhost; Port=3306; Database=chat_app; Uid=root; Pwd=mascota1;"; //CONTRASENA
+                private const string ConnString = "Server=localhost; Port=3306; Database=chat_app; Uid=root; Pwd=root;"; //CONTRASENA
 
                 public static async Task<string> LoginAsync(string usuario, string password)
                 {
