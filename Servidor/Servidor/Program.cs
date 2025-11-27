@@ -148,7 +148,7 @@ namespace Servidor
             }
             static class Database
             {
-                private const string ConnString = "Server=localhost; Port=3306; Database=new_schema; Uid=root; Pwd=root;";
+                private const string ConnString = "Server=localhost; Port=3306; Database=new_schema; Uid=root; Pwd=mascota1;"; //cambiar a root
 
                 public static async Task<string> LoginAsync(string usuario, string password)
                 {

@@ -197,5 +197,10 @@ namespace chat
             richTextBox2.Text = "contraseña";
             richTextBox2.ForeColor = Color.Gray;
         }
+
+        private void groupBox1_Enter(object sender, EventArgs e)
+        {
+
+        }
     }
 }
