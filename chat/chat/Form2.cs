@@ -21,7 +21,7 @@ namespace chat
         private bool reemplazando = false;
         private System.Windows.Forms.Timer timerActualizar;
         private int ultimoNumeroMensajes = 0;
-        string IPserver = "127.0.0.1";
+        string IPserver = "10.103.84.191";
         int PortServer = 13000;
         private bool pantallaCompleta = false;
         private FormWindowState estadoAnterior;
@@ -392,16 +392,16 @@ namespace chat
                 string mensaje = "GETMESSAGES|" + idChat;
                 string respuesta = await EnviarPeticion(mensaje);
 
-                Console.WriteLine($"Respuesta GetMessages: {respuesta}"); // Debug
+                Console.WriteLine($"CargarMensajes - Chat: {idChat}, Respuesta: {respuesta}");
 
                 string[] partes = respuesta.Split('|');
-                Console.WriteLine("PARTES:");
-                for (int i = 0; i < partes.Length; i++)
-                    Console.WriteLine($"[{i}] -> '{partes[i]}'");
 
                 if (partes[0] != "Success")
                 {
                     Console.WriteLine($"Error al cargar mensajes: {(partes.Length > 1 ? partes[1] : "Sin detalle")}");
+                    richTextBox2.SelectionColor = Color.Red;
+                    richTextBox2.AppendText("Error al cargar mensajes");
+                    ultimoNumeroMensajes = 0;
                     return;
                 }
 
@@ -411,22 +411,20 @@ namespace chat
                     richTextBox2.SelectionColor = Color.Gray;
                     richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Italic);
                     richTextBox2.AppendText("No hay mensajes en este chat. ¡Sé el primero en escribir!");
+                    ultimoNumeroMensajes = 0;
+                    Console.WriteLine("CargarMensajes - No hay mensajes, ultimoNumeroMensajes = 0");
                     return;
                 }
 
                 // Los mensajes vienen separados por ';'
                 string[] mensajes = partes[1].Split(';');
-                int contadorMensajes = mensajes.Length;
-
-                Console.WriteLine($"Número de mensajes: {contadorMensajes}"); // Debug
+                int contadorMensajes = 0;
 
                 foreach (string msg in mensajes)
                 {
                     if (string.IsNullOrEmpty(msg)) continue;
 
-                    // Cada mensaje viene como "nombre,mensaje,fecha"
-                    string[] datosMensaje = msg.Split(new char[] { ',' }, 3);
-
+                    string[] datosMensaje = msg.Split(',');
 
                     if (datosMensaje.Length < 3)
                     {
@@ -438,16 +436,13 @@ namespace chat
                     string textoMensaje = datosMensaje[1].Replace("<<COMA>>", ",");
                     string fecha = datosMensaje[2];
 
-                    // Mostrar el nombre y la fecha en azul y negrita
                     richTextBox2.SelectionColor = Color.DarkBlue;
                     richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Bold);
                     richTextBox2.AppendText($"[{fecha}] {nombre}: ");
 
-                    // Mostrar el mensaje en negro y normal
                     richTextBox2.SelectionColor = Color.Black;
                     richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Regular);
 
-                    // Verificar si el mensaje es RTF (contiene imágenes/formato)
                     if (textoMensaje.Trim().StartsWith("{\\rtf"))
                     {
                         try
@@ -472,24 +467,24 @@ namespace chat
                     }
 
                     richTextBox2.AppendText(Environment.NewLine);
+                    contadorMensajes++;
                 }
 
                 ultimoNumeroMensajes = contadorMensajes;
 
+                Console.WriteLine($"CargarMensajes - Mensajes cargados: {contadorMensajes}, ultimoNumeroMensajes actualizado a: {ultimoNumeroMensajes}");
+
                 // Scroll al final
                 richTextBox2.SelectionStart = richTextBox2.Text.Length;
                 richTextBox2.ScrollToCaret();
-
-                Console.WriteLine("Mensajes cargados exitosamente"); // Debug
-                Console.WriteLine("RTB2 Visible: " + richTextBox2.Visible);
-                Console.WriteLine("RTB2 Size: " + richTextBox2.Width + "x" + richTextBox2.Height);
-                Console.WriteLine("RTB2 Location: " + richTextBox2.Location);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error al cargar mensajes: " + ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine($"CargarMensajes - Excepción: {ex.Message}");
             }
         }
+
         private async void PictureBox2_Click(object sender, EventArgs e)
         {
             if (idChatActual == -1)

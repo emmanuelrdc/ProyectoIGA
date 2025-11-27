@@ -18,7 +18,7 @@ namespace chat
         private DataTable Usuarios;
         public int IdUsuarioSeleccionado { get; private set; }
         public string NombreUsuarioSeleccionado { get; private set; }
-        string IPserver = "127.0.0.1";
+        string IPserver = "10.103.84.191";
         int PortServer = 13000;
         public FormAgregarUsuario(int idUsuario)
         {

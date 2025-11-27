@@ -18,7 +18,7 @@ namespace chat
         private DataTable dtUsuarios;
         public string NombreGrupo { get; private set; }
         public List<int> UsuariosSeleccionados { get; private set; }
-        string IPserver = "127.0.0.1";
+        string IPserver = "10.103.84.191";
         int Port = 13000;
 
         public FormCrearGrupo(int idUsuario)
