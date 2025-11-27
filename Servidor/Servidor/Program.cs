@@ -148,7 +148,7 @@ namespace Servidor
             }
             static class Database
             {
-                private const string ConnString = "Server=localhost; Port=3306; Database=new_schema; Uid=root; Pwd=root;";
+                private const string ConnString = "Server=localhost; Port=3306; Database=chat_app; Uid=root; Pwd=root;";
 
                 public static async Task<string> LoginAsync(string usuario, string password)
                 {
@@ -274,6 +274,9 @@ namespace Servidor
                                         }
 
                                         // Formato: idChat,nombreChat,esIndividual;
+                                        nombreChat = nombreChat.Replace("|", "");
+                                        nombreChat = nombreChat.Replace(",", "<<COMA>>");
+
                                         chats += idChat + "," + nombreChat + "," + (esIndividual ? "1" : "0") + ";";
                                     }
 
@@ -326,8 +329,9 @@ namespace Servidor
                                         DateTime fecha = reader.GetDateTime(1);
 
                                         // Reemplazar comas por otro carácter para no romper el protocolo
-                                        nombre = nombre.Replace(",", "");
+                                        nombre = nombre.Replace("|", "").Replace(",", " ");
                                         mensaje = mensaje.Replace(",", "<<COMA>>");
+
 
                                         // Formato: nombre,mensaje,fecha;
                                         mensajes += nombre + "," + mensaje + "," + fecha.ToString("HH:mm") + ";";

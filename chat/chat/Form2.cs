@@ -23,6 +23,11 @@ namespace chat
         private int ultimoNumeroMensajes = 0;
         string IPserver = "127.0.0.1";
         int PortServer = 13000;
+        private bool pantallaCompleta = false;
+        private FormWindowState estadoAnterior;
+        private Rectangle limiteAnterior;
+
+        private bool cargado = false;
 
         /*
         private void InsertarTextoConEmojis(RichTextBox destino, string texto)
@@ -64,6 +69,7 @@ namespace chat
         public menuChat(int idUsuario, string nombreUsuario)
         {
             InitializeComponent();
+            ConfigurarFormulario();
             this.idUsuarioActual = idUsuario;
             this.nombreUsuarioActual = nombreUsuario;
             label2.Text = $"Hola, {nombreUsuarioActual}";
@@ -85,10 +91,203 @@ namespace chat
 
         private void Form2_Load(object sender, EventArgs e)
         {
+            if (cargado) return;
+            cargado = true;
+            Console.WriteLine("=== Form2_Load INICIO ==="); // Debug
+
+            // Ocultar el panel de ejemplo inicialmente
             panel2.Visible = false;
+
+            // Configurar el panel principal de chat (panel3)
+            panel3.Visible = true;
+            panel3.Dock = DockStyle.Fill;
+
+            // Panel de bienvenida/vacío (panel7)
+            if (panel7 != null)
+            {
+                panel7.Visible = true;
+                panel7.Dock = DockStyle.Fill;
+            }
+
+            // Configurar panel5 (info del chat - arriba)
+            if (panel5 != null)
+            {
+                panel5.Visible = true;
+                panel5.Dock = DockStyle.Top;
+                panel5.Height = 110;
+            }
+
+            // Configurar panel6 (área de escritura - abajo)
+            if (panel6 != null)
+            {
+                panel6.Visible = true;
+                panel6.Dock = DockStyle.Bottom;
+                panel6.Height = 60;
+            }
+
+            // Configurar richTextBox2 (área de mensajes - centro)
+            richTextBox2.Visible = true;
+            richTextBox2.Dock = DockStyle.Fill;
+            richTextBox2.ReadOnly = true;
+            richTextBox2.Clear();
+            richTextBox2.BackColor = Color.White;
+            richTextBox2.Font = new Font("Segoe UI", 10);
+            richTextBox2.Text = "Selecciona un chat para comenzar...";
+
+            // Configurar richTextBox1 (campo para escribir)
+            richTextBox1.Visible = false;  // Oculto hasta seleccionar un chat
+            richTextBox1.Height = 35;
+            richTextBox1.Font = new Font("Segoe UI", 10);
+
+            Console.WriteLine($"Panel3 visible: {panel3.Visible}");
+            Console.WriteLine($"Panel3 Dock: {panel3.Dock}");
+            Console.WriteLine($"Panel5 visible: {panel5?.Visible}, Dock: {panel5?.Dock}");
+            Console.WriteLine($"Panel6 visible: {panel6?.Visible}, Dock: {panel6?.Dock}");
+            Console.WriteLine($"RichTextBox2 visible: {richTextBox2.Visible}, Dock: {richTextBox2.Dock}");
+            Console.WriteLine($"PanelChats contiene {panelChats.Controls.Count} controles antes de cargar");
+
+            // Cargar los chats disponibles
             CargarChats();
+
+            // Ajustar componentes al tamaño inicial
+            AjustarComponentes();
+
+            Console.WriteLine($"PanelChats contiene {panelChats.Controls.Count} controles después de cargar");
+            Console.WriteLine("=== Form2_Load FIN ==="); // Debug
         }
 
+        private void ConfigurarFormulario()
+        {
+            // Configurar el formulario para que sea redimensionable
+            this.WindowState = FormWindowState.Normal;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.MinimumSize = new Size(900, 500);
+
+            // Suscribir eventos
+            this.Resize += MenuChat_Resize;
+            this.KeyPreview = true;
+            this.KeyDown += MenuChat_KeyDown;
+
+            // Configurar anclajes de los paneles principales
+            ConfigurarAnclajes();
+        }
+        private void ConfigurarAnclajes()
+        {
+            // Panel superior (panel1) - ya tiene Dock.Top, está bien
+
+            // Panel de chats izquierdo (panelChats) - ya tiene Dock.Left, está bien
+
+            // Panel principal de chat (panel3) - lo configuramos para que llene el espacio restante
+            panel3.Dock = DockStyle.Fill;
+            panel3.AutoSize = false;
+
+            // Dentro de panel3, configurar los sub-paneles
+            if (panel3.Controls.Contains(panel5))
+            {
+                panel5.Dock = DockStyle.Top;
+                panel5.Height = 110;
+            }
+
+            if (panel3.Controls.Contains(panel6))
+            {
+                panel6.Dock = DockStyle.Bottom;
+                panel6.Height = 50;
+            }
+
+            if (panel3.Controls.Contains(richTextBox2))
+            {
+                richTextBox2.Dock = DockStyle.Fill;
+            }
+        }
+        private void MenuChat_Resize(object sender, EventArgs e)
+        {
+            AjustarComponentes();
+        }
+        private void AjustarComponentes()
+        {
+            // Ajustar el ancho del panel de chats según el tamaño de la ventana
+            int anchoMinChats = 250;
+            int anchoMaxChats = 400;
+            int nuevoAnchoChats = Math.Max(anchoMinChats, Math.Min(anchoMaxChats, this.ClientSize.Width / 4));
+
+            if (panelChats.Width != nuevoAnchoChats)
+            {
+                panelChats.Width = nuevoAnchoChats;
+            }
+
+            // Ajustar componentes dentro del panel superior (panel1)
+            if (panel1.Controls.Contains(logOut_Button))
+            {
+                logOut_Button.Location = new Point(this.ClientSize.Width - logOut_Button.Width - 10, 4);
+            }
+
+            if (panel1.Controls.Contains(button1))
+            {
+                button1.Location = new Point(this.ClientSize.Width - button1.Width - logOut_Button.Width - 20, 2);
+            }
+
+            // Ajustar el richTextBox1 dentro del panel6
+            if (panel6.Controls.Contains(richTextBox1) && panel6.Controls.Contains(pictureBox2))
+            {
+                int margenIzq = 160;
+                int margenDer = 70;
+                richTextBox1.Location = new Point(margenIzq, 9);
+                richTextBox1.Width = panel6.Width - margenIzq - margenDer;
+
+                pictureBox2.Location = new Point(panel6.Width - pictureBox2.Width - 15, 7);
+            }
+        }
+        private void MenuChat_KeyDown(object sender, KeyEventArgs e)
+        {
+            // F11 para pantalla completa
+            if (e.KeyCode == Keys.F11)
+            {
+                AlternarPantallaCompleta();
+            }
+            // ESC para salir de pantalla completa
+            else if (e.KeyCode == Keys.Escape && pantallaCompleta)
+            {
+                SalirPantallaCompleta();
+            }
+        }
+        private void AlternarPantallaCompleta()
+        {
+            if (!pantallaCompleta)
+            {
+                EntrarPantallaCompleta();
+            }
+            else
+            {
+                SalirPantallaCompleta();
+            }
+        }
+        private void SalirPantallaCompleta()
+        {
+            // Restaurar el estado anterior
+            this.TopMost = false;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.WindowState = estadoAnterior;
+
+            if (estadoAnterior == FormWindowState.Normal)
+            {
+                this.Bounds = limiteAnterior;
+            }
+
+            pantallaCompleta = false;
+        }
+        private void EntrarPantallaCompleta()
+        {
+            // Guardar el estado actual
+            estadoAnterior = this.WindowState;
+            limiteAnterior = this.Bounds;
+
+            // Configurar pantalla completa
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
+            this.TopMost = true;
+
+            pantallaCompleta = true;
+        }
         private async Task<string> EnviarPeticion(string mensaje)
         {
             try
@@ -125,31 +324,62 @@ namespace chat
 
                 if (partes[0] != "Success" || partes.Length < 2)
                 {
-                    MessageBox.Show("Error al cargar chats");
+                    MessageBox.Show("Error al cargar chats: " + (partes.Length > 1 ? partes[1] : "Sin respuesta"));
                     return;
                 }
 
                 string[] chats = partes[1].Split(';');
                 int ypos = 0;
+                foreach (Control ctrl in panelChats.Controls.OfType<ChatItem>().ToList())
+                {
+                    panelChats.Controls.Remove(ctrl);
+                    ctrl.Dispose();
+                }
 
                 foreach (string chat in chats)
                 {
                     if (string.IsNullOrEmpty(chat)) continue;
 
-                    string[] datosChat = chat.Split(';');
-                    if (datosChat.Length < 3) continue;
+                    string[] datosChat = chat.Split(',');
+                    if (datosChat.Length < 3)
+                    {
+                        Console.WriteLine($"Datos de chat inválidos: {chat}");
+                        continue;
 
-                    int idChat = int.Parse(datosChat[0]);
-                    string nomChat = datosChat[1];
-                    bool esIndividual = datosChat[2] == "1";
+                    }
+                    try
+                    {
+                        int idChat = int.Parse(datosChat[0]);
+                        string nomChat = datosChat[1];
+                        bool esIndividual = datosChat[2] == "1";
 
-                    ChatItem chatItem = new ChatItem(idChat, idUsuarioActual, nomChat, esIndividual);
-                    chatItem.Location = new Point(panel4.Width + 5, ypos);
-                    chatItem.Width = panelChats.Width - panel4.Width - 25;
-                    chatItem.ChatClicked += ChatItem_ChatClicked;
+                        ChatItem chatItem = new ChatItem(idChat, idUsuarioActual, nomChat, esIndividual);
+                        chatItem.Location = new Point(panel4.Width + 5, ypos);
+                        chatItem.Width = panelChats.Width - panel4.Width - 25;
+                        chatItem.ChatClicked += ChatItem_ChatClicked;
 
-                    panelChats.Controls.Add(chatItem);
-                    ypos += chatItem.Height + 5;
+                        panelChats.Controls.Add(chatItem);
+                        ypos += chatItem.Height + 5;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error procesando chat '{chat}': {ex.Message}");
+                    }
+                }
+                if (ypos == 0)
+                {
+                    // No hay chats
+                    Label lblSinChats = new Label
+                    {
+                        Text = "No tienes chats aún.\nUsa 'Agregar Usuario' para crear uno.",
+                        AutoSize = false,
+                        Width = panelChats.Width - 40,
+                        Height = 60,
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        ForeColor = Color.Gray,
+                        Location = new Point(20, 50)
+                    };
+                    panelChats.Controls.Add(lblSinChats);
                 }
             }
             catch (Exception ex)
@@ -164,36 +394,65 @@ namespace chat
             {
                 richTextBox2.Clear();
 
-                string mensage = "GETMESSAGES|" + idChat;
-                string respuesta = await EnviarPeticion(mensage);
-                string[] partes = respuesta.Split('|');
+                string mensaje = "GETMESSAGES|" + idChat;
+                string respuesta = await EnviarPeticion(mensaje);
 
-                if (partes[0] != "Success" || partes.Length < 2)
+                Console.WriteLine($"Respuesta GetMessages: {respuesta}"); // Debug
+
+                string[] partes = respuesta.Split('|');
+                Console.WriteLine("PARTES:");
+                for (int i = 0; i < partes.Length; i++)
+                    Console.WriteLine($"[{i}] -> '{partes[i]}'");
+
+                if (partes[0] != "Success")
                 {
+                    Console.WriteLine($"Error al cargar mensajes: {(partes.Length > 1 ? partes[1] : "Sin detalle")}");
                     return;
                 }
 
+                if (partes.Length < 2 || string.IsNullOrEmpty(partes[1]))
+                {
+                    // No hay mensajes todavía
+                    richTextBox2.SelectionColor = Color.Gray;
+                    richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Italic);
+                    richTextBox2.AppendText("No hay mensajes en este chat. ¡Sé el primero en escribir!");
+                    return;
+                }
+
+                // Los mensajes vienen separados por ';'
                 string[] mensajes = partes[1].Split(';');
                 int contadorMensajes = mensajes.Length;
 
-                foreach(string msg in mensajes)
+                Console.WriteLine($"Número de mensajes: {contadorMensajes}"); // Debug
+
+                foreach (string msg in mensajes)
                 {
                     if (string.IsNullOrEmpty(msg)) continue;
 
-                    string[] datosMensaje = msg.Split(',');
-                    if (datosMensaje.Length < 3) continue;
+                    // Cada mensaje viene como "nombre,mensaje,fecha"
+                    string[] datosMensaje = msg.Split(new char[] { ',' }, 3);
+
+
+                    if (datosMensaje.Length < 3)
+                    {
+                        Console.WriteLine($"Mensaje con formato inválido: {msg}");
+                        continue;
+                    }
 
                     string nombre = datosMensaje[0];
                     string textoMensaje = datosMensaje[1].Replace("<<COMA>>", ",");
                     string fecha = datosMensaje[2];
 
+                    // Mostrar el nombre y la fecha en azul y negrita
                     richTextBox2.SelectionColor = Color.DarkBlue;
                     richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Bold);
                     richTextBox2.AppendText($"[{fecha}] {nombre}: ");
 
+                    // Mostrar el mensaje en negro y normal
                     richTextBox2.SelectionColor = Color.Black;
                     richTextBox2.SelectionFont = new Font(richTextBox2.Font, FontStyle.Regular);
 
+                    // Verificar si el mensaje es RTF (contiene imágenes/formato)
                     if (textoMensaje.Trim().StartsWith("{\\rtf"))
                     {
                         try
@@ -206,8 +465,9 @@ namespace chat
                                 Clipboard.SetDataObject(oldClipboardData);
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Console.WriteLine($"Error al pegar RTF: {ex.Message}");
                             richTextBox2.AppendText(textoMensaje);
                         }
                     }
@@ -220,16 +480,21 @@ namespace chat
                 }
 
                 ultimoNumeroMensajes = contadorMensajes;
+
+                // Scroll al final
                 richTextBox2.SelectionStart = richTextBox2.Text.Length;
                 richTextBox2.ScrollToCaret();
-                
+
+                Console.WriteLine("Mensajes cargados exitosamente"); // Debug
+                Console.WriteLine("RTB2 Visible: " + richTextBox2.Visible);
+                Console.WriteLine("RTB2 Size: " + richTextBox2.Width + "x" + richTextBox2.Height);
+                Console.WriteLine("RTB2 Location: " + richTextBox2.Location);
             }
             catch (Exception ex)
             {
-            MessageBox.Show("Error al cargar mensajes: " + ex.Message);
+                MessageBox.Show("Error al cargar mensajes: " + ex.Message + "\n" + ex.StackTrace);
             }
         }
-
         private async void PictureBox2_Click(object sender, EventArgs e)
         {
             if (idChatActual == -1)
@@ -313,26 +578,90 @@ namespace chat
             richTextBox1.Select(Math.Min(cursorPos, richTextBox1.TextLength), 0);
         }
         */
-        
+
         private void ChatItem_ChatClicked(object sender, EventArgs e)
         {
-            ChatItem chatItem = (ChatItem)sender;
-            idChatActual = chatItem.IdChat;
-
-            // Actualizar UI
-            label4.Text = chatItem.NombreChat;
-            panel7.Visible = false;
-            richTextBox1.Visible = true;
-            richTextBox2.ReadOnly = true;
-
-            // Cargar mensajes
-            CargarMensajes(idChatActual);
-
-            // Resaltar el chat seleccionado
-            foreach (Control ctrl in panelChats.Controls.OfType<ChatItem>())
+            try
             {
-                ChatItem item = (ChatItem)ctrl;
-                item.BackColor = (item.IdChat == idChatActual) ? Color.LightBlue : Color.White;
+                ChatItem chatItem = (ChatItem)sender;
+                idChatActual = chatItem.IdChat;
+
+                Console.WriteLine($"=== Chat clickeado: {chatItem.NombreChat} (ID: {idChatActual}) ==="); // Debug
+
+                // Actualizar el nombre del chat en el panel superior
+                if (label4 != null)
+                {
+                    label4.Text = chatItem.NombreChat;
+                }
+
+                // Ocultar panel de bienvenida
+                if (panel7 != null)
+                {
+                    panel7.Visible = false;
+                }
+
+                // Asegurar que panel3 y sus componentes estén visibles y configurados
+                panel3.Visible = true;
+                panel3.BringToFront();
+
+                // Configurar panel5 (info del chat - arriba)
+                if (panel5 != null)
+                {
+                    panel5.Visible = true;
+                    panel5.Dock = DockStyle.Top;
+                    panel5.Height = 110;
+                    panel5.BringToFront();
+                }
+
+                // Configurar panel6 (área de escritura - abajo)
+                if (panel6 != null)
+                {
+                    panel6.Visible = true;
+                    panel6.Dock = DockStyle.Bottom;
+                    panel6.Height = 60;
+                    panel6.BringToFront();
+                }
+
+                // Configurar richTextBox2 (área de mensajes - centro)
+                richTextBox2.Visible = true;
+                richTextBox2.Dock = DockStyle.Fill;
+                richTextBox2.ReadOnly = true;
+                richTextBox2.BackColor = Color.White;
+                richTextBox2.BringToFront(); 
+
+                // Configurar richTextBox1 (campo para escribir - dentro de panel6)
+                richTextBox1.Visible = true;
+                richTextBox1.Enabled = true;
+
+                Console.WriteLine($"Panel3 visible: {panel3.Visible}"); // Debug
+                Console.WriteLine($"Panel5 visible: {panel5?.Visible}, Height: {panel5?.Height}"); // Debug
+                Console.WriteLine($"Panel6 visible: {panel6?.Visible}, Height: {panel6?.Height}"); // Debug
+                Console.WriteLine($"RichTextBox2 visible: {richTextBox2.Visible}"); // Debug
+                Console.WriteLine($"RichTextBox1 visible: {richTextBox1.Visible}"); // Debug
+
+                // Cargar mensajes del chat
+                CargarMensajes(idChatActual);
+
+                // Resaltar el chat seleccionado
+                foreach (Control ctrl in panelChats.Controls)
+                {
+                    if (ctrl is ChatItem item)
+                    {
+                        item.BackColor = (item.IdChat == idChatActual) ? Color.LightBlue : Color.White;
+                    }
+                }
+
+                // Ajustar componentes después de cambiar visibilidad
+                AjustarComponentes();
+
+                // Dar foco al richTextBox1 para que el usuario pueda escribir
+                richTextBox1.Focus();
+
+                Console.WriteLine("=== Chat cargado exitosamente ==="); // Debug
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al seleccionar chat: " + ex.Message + "\n" + ex.StackTrace);
             }
         }
 

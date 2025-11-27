@@ -194,24 +194,25 @@ namespace chat
             // 
             // panel3
             // 
-            this.panel3.AutoSize = true;
+            this.panel3.AutoSize = false;
+            this.panel3.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             this.panel3.BackColor = System.Drawing.SystemColors.ButtonFace;
             this.panel3.Controls.Add(this.richTextBox2);
             this.panel3.Controls.Add(this.panel6);
             this.panel3.Controls.Add(this.panel5);
-            this.panel3.Location = new System.Drawing.Point(322, 36);
+            this.panel3.Dock = DockStyle.Fill;
             this.panel3.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(805, 466);
             this.panel3.TabIndex = 5;
             this.panel3.Paint += new System.Windows.Forms.PaintEventHandler(this.panel3_Paint);
             // 
             // richTextBox2
             // 
-            this.richTextBox2.Location = new System.Drawing.Point(5, 118);
+            
             this.richTextBox2.Margin = new System.Windows.Forms.Padding(4);
             this.richTextBox2.Name = "richTextBox2";
-            this.richTextBox2.Size = new System.Drawing.Size(784, 288);
+            this.richTextBox2.Dock = DockStyle.Fill;
+            
             this.richTextBox2.TabIndex = 2;
             this.richTextBox2.Text = "";
             // 
@@ -223,6 +224,8 @@ namespace chat
             this.panel6.Location = new System.Drawing.Point(5, 414);
             this.panel6.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panel6.Name = "panel6";
+            this.panel6.Dock = DockStyle.Bottom;
+            this.panel6.Height = 60;
             this.panel6.Size = new System.Drawing.Size(792, 50);
             this.panel6.TabIndex = 1;
             // 
@@ -247,7 +250,6 @@ namespace chat
             this.richTextBox1.Size = new System.Drawing.Size(535, 26);
             this.richTextBox1.TabIndex = 0;
             this.richTextBox1.Text = "";
-           // this.richTextBox1.TextChanged += new System.EventHandler(this.richTextBox1_TextChanged);
             // 
             // panel5
             // 
@@ -257,6 +259,9 @@ namespace chat
             this.panel5.Location = new System.Drawing.Point(5, 2);
             this.panel5.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panel5.Name = "panel5";
+            this.panel5.Dock = DockStyle.Top;
+            this.panel5.Height = 110;
+
             this.panel5.Size = new System.Drawing.Size(797, 110);
             this.panel5.TabIndex = 0;
             // 

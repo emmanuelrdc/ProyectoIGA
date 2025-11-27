@@ -66,7 +66,7 @@ namespace chat
 
                 if (partes[0] != "Success" || partes.Length < 2)
                 {
-                    MessageBox.Show("Error al cargar usuarios");
+                    MessageBox.Show("Error al cargar usuarios: " + (partes.Length > 1 ? partes[1] : "Sin respuesta"));
                     return;
                 }
 
@@ -82,16 +82,29 @@ namespace chat
                     string[] datos = u.Split(',');
                     if (datos.Length < 2) continue;
 
-                    DataRow row = Usuarios.NewRow();
-                    row["id_usuario"] = int.Parse(datos[0]);
-                    row["nombre"] = datos[1];
-                    Usuarios.Rows.Add(row);
+                    try
+                    {
+                        DataRow row = Usuarios.NewRow();
+                        row["id_usuario"] = int.Parse(datos[0]);
+                        row["nombre"] = datos[1];
+                        Usuarios.Rows.Add(row);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error procesando usuario '{u}': {ex.Message}");
+                    }
 
                 }
                 ActualizarListBox();
-            }catch(Exception e)
+                if (Usuarios.Rows.Count == 0)
+                {
+                    MessageBox.Show("No hay otros usuarios registrados en el sistema.",
+                        "Información", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar los usuarioss:" + e.Message);
+                MessageBox.Show("Error al cargar los usuarios: " + ex.Message + "\n" + ex.StackTrace);
             }
         }
 

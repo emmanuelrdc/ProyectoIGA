@@ -69,7 +69,7 @@ namespace chat
 
                 if (partes[0] != "Success" || partes.Length < 2)
                 {
-                    MessageBox.Show("Error al cargar usuarios");
+                    MessageBox.Show("Error al cargar usuarios: " + (partes.Length > 1 ? partes[1] : "Sin respuesta"));
                     return;
                 }
 
@@ -77,30 +77,54 @@ namespace chat
                 dtUsuarios.Columns.Add("id_usuario", typeof(int));
                 dtUsuarios.Columns.Add("nombre", typeof(string));
 
-                string[] users = partes[1].Split(',');
+                
+                string[] users = partes[1].Split(';');  
+
                 foreach (string u in users)
                 {
                     if (string.IsNullOrEmpty(u)) continue;
 
-                    string[] datos = u.Split(',');
-                    if (datos.Length < 2) continue;
+                    
+                    string[] datos = u.Split(',');  
 
-                    DataRow row = dtUsuarios.NewRow();
-                    row["id_usuario"] = int.Parse(datos[0]);
-                    row["nombre"] = datos[1];
-                    dtUsuarios.Rows.Add(row);
-
-                    checkedListBoxUsuarios.Items.Add(new UsuarioItem
+                    if (datos.Length < 2)
                     {
-                        Id = int.Parse(datos[0]),
-                        Nombre = datos[1]
-                    });
+                        Console.WriteLine($"Datos de usuario inválidos: {u}");
+                        continue;
+                    }
+
+                    try
+                    {
+                        int idUsuario = int.Parse(datos[0]);
+                        string nombre = datos[1];
+
+                        DataRow row = dtUsuarios.NewRow();
+                        row["id_usuario"] = idUsuario;
+                        row["nombre"] = nombre;
+                        dtUsuarios.Rows.Add(row);
+
+                        checkedListBoxUsuarios.Items.Add(new UsuarioItem
+                        {
+                            Id = idUsuario,
+                            Nombre = nombre
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error procesando usuario '{u}': {ex.Message}");
+                    }
+                }
+
+                if (checkedListBoxUsuarios.Items.Count == 0)
+                {
+                    MessageBox.Show("No hay otros usuarios disponibles para agregar al grupo.",
+                        "Información", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar usuarios: " + ex.Message, "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error al cargar usuarios: " + ex.Message + "\n" + ex.StackTrace,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
