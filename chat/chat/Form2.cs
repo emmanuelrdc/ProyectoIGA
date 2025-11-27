@@ -27,21 +27,27 @@ namespace chat
         private FormWindowState estadoAnterior;
         private Rectangle limiteAnterior;
 
-        
-            string txtOrig = richTextBox1.Text;
+        private bool cargado = false;
+
+        private void InsertarTextoConEmojis(RichTextBox destino, string texto)
+        { 
+            string txtOrig = destino.Text;
             string txtMod = txtOrig;
 
             foreach(var emoji in mapaEmojis)
             {
-                if (txtMod.Contains(emoji.Key));
+                if (txtMod.Contains(emoji.Key))
                     txtMod = txtMod.Replace(emoji.Key, emoji.Value);
             }
 
             if (txtMod != txtOrig)
             {
-                int cursorPiv = richTextBox1.SelectionStart;
-                richTextBox1.Text = txtMod;
-                richTextBox1.SelectionStart = cursorPiv - 1;
+                int cursorPiv = destino.SelectionStart, diftam;
+
+                destino.Text = txtMod;
+
+                diftam = txtOrig.Length - txtMod.Length;
+                destino.SelectionStart = Math.Max(0, cursorPiv - diftam);
             }
         }
 
@@ -53,6 +59,8 @@ namespace chat
             { "<3", "❤️" },
             { ":(", "😔" }
         };
+
+
 
         public menuChat(int idUsuario, string nombreUsuario)
         {
@@ -298,7 +306,6 @@ namespace chat
             catch (Exception ex)
             {
                 return "Error|No se pudo conectar al servidor" + ex;
-                ;
             }
         }
 
@@ -536,7 +543,6 @@ namespace chat
                 MessageBox.Show("Error al enviar mensaje: " + ex.Message);
             }
         }
-        */
         
         private void ChatItem_ChatClicked(object sender, EventArgs e)
         {
@@ -661,20 +667,17 @@ namespace chat
 
         private void RichTextBox1_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Reemplazar emojis solo al presionar espacio o Enter
             if (e.KeyChar == ' ' || e.KeyChar == (char)Keys.Enter)
             {
-                if (!reemplazando)
-                {
-                    reemplazando = true;
-                    reemplazando = false;
-                }
+                //pos actual
+                int cursorPosition = richTextBox1.SelectionStart;
+
+                InsertarTextoConEmojis(richTextBox1, richTextBox1.Text);
             }
 
-            // Si presiona Enter, enviar el mensaje
             if (e.KeyChar == (char)Keys.Enter)
             {
-                e.Handled = true; // Evitar salto de línea
+                e.Handled = true;
                 PictureBox2_Click(sender, e);
             }
         }
