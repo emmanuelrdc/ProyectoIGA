@@ -9,7 +9,7 @@ namespace chat
 {
     public partial class Form1 : Form
     {
-        string IPserver = "10.103.84.191";
+        string IPserver = "192.168.0.101";
         int PortServer = 13000;
         private bool pantallaCompleta = false;
         private FormWindowState estadoAnterior;

@@ -21,7 +21,7 @@ namespace chat
         private bool reemplazando = false;
         private System.Windows.Forms.Timer timerActualizar;
         private int ultimoNumeroMensajes = 0;
-        string IPserver = "10.103.84.191";
+        string IPserver = "192.168.0.101";
         int PortServer = 13000;
         private bool pantallaCompleta = false;
         private FormWindowState estadoAnterior;
@@ -191,6 +191,27 @@ namespace chat
 
             Console.WriteLine($"PanelChats contiene {panelChats.Controls.Count} controles después de cargar");
             Console.WriteLine("=== Form2_Load FIN ==="); // Debug
+
+            if (button1 != null)
+            {
+                button1.Visible = true;
+                button1.Enabled = true;
+            }
+
+            if (button2 != null)
+            {
+                button2.Visible = true;
+                button2.Enabled = true;
+            }
+
+            Console.WriteLine($"button1 visible: {button1?.Visible}, enabled: {button1?.Enabled}");
+            Console.WriteLine($"button2 visible: {button2?.Visible}, enabled: {button2?.Enabled}");
+
+            CargarChats();
+            AjustarComponentes();
+
+
+            MessageBox.Show($"button1:\nVisible: {button1?.Visible}\nEnabled: {button1?.Enabled}\nLocation: {button1?.Location}\nParent: {button1?.Parent?.Name}");
         }
 
         private void ConfigurarFormulario()
@@ -272,6 +293,23 @@ namespace chat
                 richTextBox1.Width = panel6.Width - margenIzq - margenDer;
 
                 pictureBox2.Location = new Point(panel6.Width - pictureBox2.Width - 15, 7);
+            }
+            if (panel1.Controls.Contains(button1))
+            {
+                // Ajustar posición del botón "Agregar Usuario"
+                button1.Location = new Point(this.ClientSize.Width - button1.Width - logOut_Button.Width - 150, 10);
+                button1.BringToFront(); // ✅ Traer al frente por si está tapado
+
+                Console.WriteLine($"button1 posición: {button1.Location}, tamaño: {button1.Size}");
+            }
+
+            if (panel1.Controls.Contains(button2))
+            {
+                // Ajustar posición del botón "Crear Grupo"
+                button2.Location = new Point(this.ClientSize.Width - button2.Width - button1.Width - logOut_Button.Width - 160, 10);
+                button2.BringToFront(); // ✅ Traer al frente por si está tapado
+
+                Console.WriteLine($"button2 posición: {button2.Location}, tamaño: {button2.Size}");
             }
         }
         private void MenuChat_KeyDown(object sender, KeyEventArgs e)
@@ -860,11 +898,6 @@ namespace chat
         private void panel6_Paint(object sender, PaintEventArgs e) { }
         private void label3_Click(object sender, EventArgs e) { }
 
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            timerActualizar?.Stop();
-            base.OnFormClosing(e);
-        }
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
